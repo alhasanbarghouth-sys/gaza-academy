@@ -29,16 +29,16 @@ export default async function DashboardPage() {
         .select("id", { count: "exact", head: true })
         .eq("requester_id", profile.id),
       supabase
-        .from("daily_activities")
+        .from("activity_sessions")
         .select("id, total_beneficiaries", { count: "exact" })
         .eq("activity_date", todayStr),
       supabase
-        .from("daily_activities")
+        .from("activity_sessions")
         .select("total_beneficiaries")
         .gte("activity_date", monthStartStr),
       supabase
-        .from("daily_activities")
-        .select("id, project_name, activity_type, location, total_beneficiaries, activity_date, facilitator_id, profiles:facilitator_id(full_name)")
+        .from("activity_sessions")
+        .select("id, project_name, activity_type, total_beneficiaries, activity_date, created_by, camps(name), profiles:created_by(full_name)")
         .order("activity_date", { ascending: false })
         .limit(8),
     ]);
@@ -74,10 +74,10 @@ export default async function DashboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-black/5 text-right text-gray-500">
-                    <th className="pb-2 font-medium">الميسر</th>
+                    <th className="pb-2 font-medium">سجّلها</th>
                     <th className="pb-2 font-medium">المشروع</th>
                     <th className="pb-2 font-medium">النوع</th>
-                    <th className="pb-2 font-medium">الموقع</th>
+                    <th className="pb-2 font-medium">المخيم</th>
                     <th className="pb-2 font-medium">المستفيدون</th>
                     <th className="pb-2 font-medium">التاريخ</th>
                   </tr>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
                       <td className="py-2.5">{(a as any).profiles?.full_name ?? "—"}</td>
                       <td className="py-2.5">{a.project_name}</td>
                       <td className="py-2.5">{a.activity_type}</td>
-                      <td className="py-2.5">{a.location}</td>
+                      <td className="py-2.5">{(a as any).camps?.name ?? "—"}</td>
                       <td className="py-2.5">{a.total_beneficiaries}</td>
                       <td className="py-2.5 text-gray-500">{a.activity_date}</td>
                     </tr>

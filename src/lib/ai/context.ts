@@ -19,8 +19,8 @@ export async function gatherAiContext(profile: Profile) {
       .order("created_at", { ascending: false })
       .limit(15),
     supabase
-      .from("daily_activities")
-      .select("project_name, activity_type, location, total_beneficiaries, activity_date")
+      .from("activity_sessions")
+      .select("project_name, activity_type, total_beneficiaries, activity_date, camps(name)")
       .order("activity_date", { ascending: false })
       .limit(20),
     supabase.from("reports_5w").select("report_month, data").order("report_month", { ascending: false }).limit(2),

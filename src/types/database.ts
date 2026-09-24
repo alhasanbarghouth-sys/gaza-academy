@@ -30,13 +30,23 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface DailyActivity {
+export interface Camp {
   id: string;
-  facilitator_id: string;
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+  notes: string | null;
+  is_verified: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ActivitySession {
+  id: string;
   activity_date: string;
+  camp_id: string | null;
   project_name: string;
   activity_type: string;
-  location: string;
   beneficiaries_male: number;
   beneficiaries_female: number;
   beneficiaries_children: number;
@@ -45,8 +55,15 @@ export interface DailyActivity {
   description: string | null;
   challenges: string | null;
   attachments: { name: string; url: string }[];
+  created_by: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ActivitySessionParticipant {
+  session_id: string;
+  profile_id: string;
+  created_at: string;
 }
 
 export interface OrgRequest {

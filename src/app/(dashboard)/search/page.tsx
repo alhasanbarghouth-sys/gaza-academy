@@ -22,9 +22,9 @@ export default async function SearchPage({
     const [r, a, f, fin] = await Promise.all([
       supabase.from("requests").select("id, title, message, status").or(`title.ilike.${like},message.ilike.${like}`).limit(10),
       supabase
-        .from("daily_activities")
-        .select("id, project_name, location, description, activity_date")
-        .or(`project_name.ilike.${like},location.ilike.${like},description.ilike.${like}`)
+        .from("activity_sessions")
+        .select("id, project_name, description, activity_date, camps(name)")
+        .or(`project_name.ilike.${like},description.ilike.${like}`)
         .limit(10),
       supabase.from("files").select("id, file_name, category").ilike("file_name", like).limit(10),
       supabase.from("financial_reports").select("id, title, period").ilike("title", like).limit(10),
@@ -79,7 +79,7 @@ export default async function SearchPage({
           <div className="space-y-2">
             {activities.map((a) => (
               <div key={a.id} className="card text-sm">
-                <p className="font-semibold">{a.project_name} — {a.location}</p>
+                <p className="font-semibold">{a.project_name} — {a.camps?.name ?? "—"}</p>
                 <p className="text-gray-500">{a.description}</p>
                 <p className="mt-1 text-xs text-gray-400">{a.activity_date}</p>
               </div>

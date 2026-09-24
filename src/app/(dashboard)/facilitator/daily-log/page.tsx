@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import { ACTIVITY_TYPE_OPTIONS } from "@/lib/rbac";
-import { createDailyActivity } from "./actions";
+import { ACTIVITY_TYPE_OPTIONS, ROLE_LABELS_AR } from "@/lib/rbac";
+import { createActivitySession } from "./actions";
+import CampPicker from "./_components/CampPicker";
 import { format } from "date-fns";
 
 export default async function DailyLogPage({
@@ -13,19 +14,34 @@ export default async function DailyLogPage({
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const { data: myActivities } = await supabase
-    .from("daily_activities")
-    .select("*")
-    .eq("facilitator_id", profile.id)
-    .order("activity_date", { ascending: false })
-    .limit(20);
+  const [camps, colleagues, mySessions] = await Promise.all([
+    supabase.from("camps").select("*").order("name"),
+    supabase
+      .from("profiles")
+      .select("id, full_name, role")
+      .neq("id", profile.id)
+      .eq("is_active", true)
+      .order("full_name"),
+    supabase
+      .from("activity_sessions")
+      .select(
+        "*, camps(name), activity_session_participants(profile_id, profiles(id, full_name))"
+      )
+      .order("activity_date", { ascending: false })
+      .limit(20),
+  ]);
+
+  // Only sessions this user actually participates in.
+  const myRows = (mySessions.data ?? []).filter((s: any) =>
+    s.activity_session_participants.some((p: any) => p.profile_id === profile.id)
+  );
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">سجل النشاط اليومي</h1>
         <p className="mt-1 text-sm text-gray-500">
-          سجّل نشاطك الميداني يوميًا — يُستخدم تلقائيًا في تقرير 5W الشهري وتقرير أوتشا الأسبوعي.
+          سجّل نشاطك الميداني — يُستخدم تلقائيًا في تقرير 5W الشهري وتقرير أوتشا الأسبوعي.
         </p>
       </div>
 
@@ -38,7 +54,7 @@ export default async function DailyLogPage({
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
       )}
 
-      <form action={createDailyActivity} className="card space-y-5">
+      <form action={createActivitySession} className="card space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="activity_date">التاريخ</label>
@@ -68,14 +84,30 @@ export default async function DailyLogPage({
             <label className="label" htmlFor="project_name">اسم المشروع / البرنامج</label>
             <input id="project_name" name="project_name" required className="input" />
           </div>
-          <div>
-            <label className="label" htmlFor="location">الموقع</label>
-            <input id="location" name="location" required className="input" placeholder="مثال: مركز بسمة - خانيونس" />
-          </div>
+          <CampPicker camps={camps.data ?? []} />
         </div>
 
+        {colleagues.data && colleagues.data.length > 0 && (
+          <div>
+            <p className="label">اشتغلت مع (اختر كل من شاركك هذا النشاط)</p>
+            <p className="mb-2 text-xs text-gray-400">
+              مهم: أدخل عدد المستفيدين الفعلي والإجمالي لهذا النشاط مرة واحدة فقط — سواء اشتغلتم عليه شخص واحد أو
+              عدة أشخاص، حتى لا يتكرر احتساب نفس المستفيدين لكل شخص من الطاقم.
+            </p>
+            <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-black/10 p-3 sm:grid-cols-3">
+              {colleagues.data.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="participants" value={c.id} />
+                  {c.full_name}
+                  <span className="text-xs text-gray-400">({ROLE_LABELS_AR[c.role as keyof typeof ROLE_LABELS_AR]})</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
-          <p className="label">عدد المستفيدين</p>
+          <p className="label">عدد المستفيدين الفعلي لهذا النشاط (رقم واحد، غير مكرر لكل مشارك من الطاقم)</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
               <label className="mb-1 block text-xs text-gray-500" htmlFor="beneficiaries_male">ذكور</label>
@@ -110,7 +142,7 @@ export default async function DailyLogPage({
 
       <section>
         <h2 className="mb-3 text-lg font-bold">أنشطتي الأخيرة</h2>
-        {myActivities && myActivities.length > 0 ? (
+        {myRows.length > 0 ? (
           <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
             <table className="w-full text-sm">
               <thead>
@@ -118,18 +150,25 @@ export default async function DailyLogPage({
                   <th className="p-3 font-medium">التاريخ</th>
                   <th className="p-3 font-medium">المشروع</th>
                   <th className="p-3 font-medium">النوع</th>
-                  <th className="p-3 font-medium">الموقع</th>
+                  <th className="p-3 font-medium">المخيم</th>
                   <th className="p-3 font-medium">المستفيدون</th>
+                  <th className="p-3 font-medium">شارك معك</th>
                 </tr>
               </thead>
               <tbody>
-                {myActivities.map((a) => (
+                {myRows.map((a: any) => (
                   <tr key={a.id} className="border-b border-black/5 last:border-0">
                     <td className="p-3">{a.activity_date}</td>
                     <td className="p-3">{a.project_name}</td>
                     <td className="p-3">{a.activity_type}</td>
-                    <td className="p-3">{a.location}</td>
+                    <td className="p-3">{a.camps?.name ?? "—"}</td>
                     <td className="p-3">{a.total_beneficiaries}</td>
+                    <td className="p-3 text-xs text-gray-500">
+                      {a.activity_session_participants
+                        .map((p: any) => p.profiles?.full_name)
+                        .filter((n: string) => n && n !== profile.full_name)
+                        .join("، ") || "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
