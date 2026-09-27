@@ -20,7 +20,14 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent("رقم الجوال أو كلمة المرور غير صحيحة")}`);
+    console.error("sign-in failed", { status: error.status, code: error.code, message: error.message });
+    const message =
+      error.code === "invalid_credentials"
+        ? "رقم الجوال أو كلمة المرور غير صحيحة"
+        : error.code === "email_not_confirmed"
+          ? "الحساب غير مفعّل بعد — يجب تأكيده من لوحة Supabase"
+          : `تعذّر تسجيل الدخول: ${error.message}`;
+    redirect(`/login?error=${encodeURIComponent(message)}`);
   }
 
   redirect(next || "/dashboard");
