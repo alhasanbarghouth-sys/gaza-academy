@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ROLE_LABELS_AR } from "@/lib/rbac";
 import { createStaffUser, toggleActive } from "./actions";
 import RoleSelectForm from "./_components/RoleSelectForm";
+import ResetLoginForm from "./_components/ResetLoginForm";
+import ImportStaffForm from "./_components/ImportStaffForm";
 import type { UserRole } from "@/types/database";
 
 const ALL_ROLES = Object.keys(ROLE_LABELS_AR) as UserRole[];
@@ -11,9 +13,9 @@ const ALL_ROLES = Object.keys(ROLE_LABELS_AR) as UserRole[];
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; created?: string }>;
+  searchParams: Promise<{ error?: string; created?: string; updated?: string }>;
 }) {
-  const { error, created } = await searchParams;
+  const { error, created, updated } = await searchParams;
   const profile = await requireProfile();
   if (!["system_admin", "executive_director"].includes(profile.role)) redirect("/dashboard");
 
@@ -35,9 +37,15 @@ export default async function AdminUsersPage({
           تم إنشاء حساب «{created}» — أعطه رقم جواله كاسم مستخدم ورقم هويته كلمة مرور مؤقتة.
         </div>
       )}
+      {updated && (
+        <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          تم تحديث بيانات دخول «{updated}».
+        </div>
+      )}
       {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
       <form action={createStaffUser} className="card grid gap-4 sm:grid-cols-3">
+        <h2 className="text-lg font-bold sm:col-span-3">إضافة شخص واحد</h2>
         <input name="full_name" required placeholder="الاسم الكامل" className="input" />
         <input name="phone" required placeholder="رقم الجوال (اسم المستخدم)" className="input" dir="ltr" />
         <input name="national_id" required placeholder="رقم الهوية (كلمة المرور المؤقتة)" className="input" dir="ltr" />
@@ -51,6 +59,8 @@ export default async function AdminUsersPage({
         </select>
         <button type="submit" className="btn-primary">إنشاء حساب</button>
       </form>
+
+      <ImportStaffForm />
 
       <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
         <table className="w-full text-sm">
@@ -79,11 +89,16 @@ export default async function AdminUsersPage({
                   </span>
                 </td>
                 <td className="p-3">
-                  <form action={toggleActive}>
-                    <input type="hidden" name="id" value={u.id} />
-                    <input type="hidden" name="is_active" value={String(u.is_active)} />
-                    <button className="btn-secondary text-xs">{u.is_active ? "إيقاف" : "تفعيل"}</button>
-                  </form>
+                  <div className="flex flex-wrap gap-2">
+                    <ResetLoginForm id={u.id} name={u.full_name} />
+                    {u.id !== profile.id && (
+                      <form action={toggleActive}>
+                        <input type="hidden" name="id" value={u.id} />
+                        <input type="hidden" name="is_active" value={String(u.is_active)} />
+                        <button className="btn-secondary text-xs">{u.is_active ? "إيقاف" : "تفعيل"}</button>
+                      </form>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

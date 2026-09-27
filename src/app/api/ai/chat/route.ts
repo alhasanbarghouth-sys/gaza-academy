@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { ApiError, GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
 import { gatherAiContext } from "@/lib/ai/context";
 
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
+const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -28,9 +28,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "الرسالة فارغة" }, { status: 400 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     return NextResponse.json(
-      { error: "لم يتم إعداد مفتاح Anthropic API بعد. راجع ملف .env.local" },
+      { error: "لم يتم إعداد مفتاح Gemini بعد (GEMINI_API_KEY في إعدادات Vercel)" },
       { status: 500 }
     );
   }
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
   const context = await gatherAiContext(profile);
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
   const systemPrompt = `أنت المساعد الذكي لنظام إدارة جمعية بسمة للثقافة والفنون. تتحدث العربية بشكل أساسي وبأسلوب واضح ومباشر.
 أنت مساعد ذكاء اصطناعي عام (LLM) — يمكنك الإجابة عن أي سؤال يطرحه المستخدم، وليس فقط الأسئلة المتعلقة بالنظام.
@@ -75,22 +75,20 @@ export async function POST(req: Request) {
 بيانات النظام الحالية (JSON):
 ${JSON.stringify(context, null, 2)}`;
 
-  const messages =
-    (history ?? []).map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    })) || [];
+  // Gemini calls the assistant role "model".
+  const contents = (history?.length ? history : [{ role: "user", content: message }]).map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await ai.models.generateContent({
       model: MODEL,
-      max_tokens: 1500,
-      system: systemPrompt,
-      messages: messages.length > 0 ? messages : [{ role: "user", content: message }],
+      contents,
+      config: { systemInstruction: systemPrompt, maxOutputTokens: 2048 },
     });
 
-    const textBlock = response.content.find((b) => b.type === "text");
-    const answer = textBlock && "text" in textBlock ? textBlock.text : "عذرًا، لم أتمكن من توليد رد.";
+    const answer = response.text?.trim() || "عذرًا، لم أتمكن من توليد رد.";
 
     await supabase.from("ai_messages").insert({
       conversation_id: conversationId,
@@ -101,6 +99,12 @@ ${JSON.stringify(context, null, 2)}`;
     return NextResponse.json({ conversationId, answer });
   } catch (err) {
     console.error("AI chat error", err);
+    if (err instanceof ApiError && err.status === 429) {
+      return NextResponse.json(
+        { error: "تم تجاوز حد الاستخدام المجاني مؤقتًا — حاول مرة أخرى بعد دقيقة" },
+        { status: 429 }
+      );
+    }
     return NextResponse.json({ error: "حدث خطأ أثناء الاتصال بالمساعد الذكي" }, { status: 500 });
   }
 }

@@ -6,8 +6,10 @@
  * and at login time, or the account becomes unreachable.
  */
 
-// Phones set to Arabic type Arabic-Indic (٠-٩) or Persian (۰-۹) digits.
-function toAsciiDigits(raw: string): string {
+// Phones set to Arabic type Arabic-Indic (٠-٩) or Persian (۰-۹) digits. Applied
+// to passwords too (on set and on login), so an ID-number password typed on an
+// Arabic keyboard still matches.
+export function toAsciiDigits(raw: string): string {
   return raw
     .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));

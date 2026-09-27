@@ -2,11 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { loginToAuthEmail } from "@/lib/phone";
+import { loginToAuthEmail, toAsciiDigits } from "@/lib/phone";
 
 export async function signIn(formData: FormData) {
   const phone = String(formData.get("phone") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  const password = toAsciiDigits(String(formData.get("password") ?? ""));
   const next = String(formData.get("next") ?? "/dashboard");
 
   if (!phone || !password) {

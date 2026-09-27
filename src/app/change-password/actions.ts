@@ -3,13 +3,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { toAsciiDigits } from "@/lib/phone";
 
 export async function changePassword(formData: FormData) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const newPassword = String(formData.get("new_password") ?? "");
-  const confirmPassword = String(formData.get("confirm_password") ?? "");
+  const newPassword = toAsciiDigits(String(formData.get("new_password") ?? ""));
+  const confirmPassword = toAsciiDigits(String(formData.get("confirm_password") ?? ""));
 
   if (newPassword.length < 8) {
     redirect(`/change-password?error=${encodeURIComponent("كلمة المرور يجب أن تكون 8 أحرف/أرقام على الأقل")}`);
