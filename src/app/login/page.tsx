@@ -31,7 +31,8 @@ export default async function LoginPage({
             <input
               id="phone"
               name="phone"
-              type="tel"
+              type="text"
+              autoComplete="username"
               required
               className="input"
               placeholder="05XXXXXXXX"
