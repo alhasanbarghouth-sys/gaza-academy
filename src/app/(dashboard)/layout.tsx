@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { navForRole, ROLE_LABELS_AR } from "@/lib/rbac";
 import SidebarNav from "./_components/SidebarNav";
@@ -5,6 +6,7 @@ import SignOutButton from "./_components/SignOutButton";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
+  if (profile.must_change_password) redirect("/change-password");
   const items = navForRole(profile.role);
 
   return (

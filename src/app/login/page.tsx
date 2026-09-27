@@ -27,14 +27,14 @@ export default async function LoginPage({
         <form action={signIn} className="space-y-4">
           <input type="hidden" name="next" value={next ?? "/dashboard"} />
           <div>
-            <label className="label" htmlFor="email">البريد الإلكتروني</label>
+            <label className="label" htmlFor="phone">رقم الجوال</label>
             <input
-              id="email"
-              name="email"
-              type="email"
+              id="phone"
+              name="phone"
+              type="tel"
               required
               className="input"
-              placeholder="name@basma.org"
+              placeholder="05XXXXXXXX"
               dir="ltr"
             />
           </div>
@@ -55,7 +55,8 @@ export default async function LoginPage({
         </form>
 
         <p className="mt-6 text-center text-xs text-gray-400">
-          لا يوجد إنشاء حساب ذاتي — يقوم مسؤول النظام بإنشاء الحسابات وتحديد الصلاحيات.
+          لا يوجد إنشاء حساب ذاتي — يقوم مسؤول النظام بإنشاء الحسابات. كلمة المرور المؤقتة هي رقم الهوية، وسيُطلب
+          تغييرها عند أول تسجيل دخول.
         </p>
       </div>
     </main>

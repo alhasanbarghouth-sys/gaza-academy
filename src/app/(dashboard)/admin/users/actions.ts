@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizePhone, phoneToAuthEmail } from "@/lib/phone";
 import type { UserRole } from "@/types/database";
 
 function assertCanManageUsers(role: UserRole) {
@@ -12,29 +13,46 @@ function assertCanManageUsers(role: UserRole) {
   }
 }
 
-export async function inviteUser(formData: FormData) {
+export async function createStaffUser(formData: FormData) {
   const profile = await requireProfile();
   assertCanManageUsers(profile.role);
 
-  const email = String(formData.get("email") ?? "").trim();
   const full_name = String(formData.get("full_name") ?? "").trim();
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const national_id = String(formData.get("national_id") ?? "").trim();
+  const department = String(formData.get("department") ?? "").trim() || null;
   const role = String(formData.get("role") ?? "staff") as UserRole;
 
-  if (!email || !full_name) {
-    redirect(`/admin/users?error=${encodeURIComponent("الرجاء إدخال البريد والاسم")}`);
+  const phone = normalizePhone(phoneRaw);
+
+  if (!full_name || !phone || !national_id) {
+    redirect(`/admin/users?error=${encodeURIComponent("الرجاء إدخال الاسم، رقم الجوال، ورقم الهوية")}`);
+  }
+  if (national_id.length < 6) {
+    redirect(`/admin/users?error=${encodeURIComponent("رقم الهوية (كلمة المرور المؤقتة) قصير جدًا")}`);
   }
 
   const admin = createAdminClient();
-  const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name, role },
+  const { data, error } = await admin.auth.admin.createUser({
+    email: phoneToAuthEmail(phone),
+    password: national_id,
+    email_confirm: true,
+    user_metadata: { full_name, role },
   });
 
-  if (error) {
-    redirect(`/admin/users?error=${encodeURIComponent(error.message)}`);
+  if (error || !data.user) {
+    redirect(`/admin/users?error=${encodeURIComponent(error?.message ?? "تعذّر إنشاء الحساب")}`);
   }
 
+  // The handle_new_user trigger already created the profile row (with role
+  // from user_metadata) — fill in the fields it doesn't set.
+  await admin
+    .from("profiles")
+    .update({ phone, department, must_change_password: true })
+    .eq("id", data.user!.id);
+
   revalidatePath("/admin/users");
-  redirect("/admin/users?invited=1");
+  redirect(`/admin/users?created=${encodeURIComponent(full_name)}`);
 }
 
 export async function updateUserRole(formData: FormData) {
