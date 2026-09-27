@@ -2,7 +2,7 @@
  * Staff log in with their phone number, not an email address. Supabase Auth
  * only speaks email+password, so we map phone -> a synthetic address under a
  * domain nothing will ever deliver mail to. This function must produce the
- * exact same string at account-creation time (admin/users, scripts/seed-staff.mjs)
+ * exact same string at account-creation time (admin/users)
  * and at login time, or the account becomes unreachable.
  */
 
