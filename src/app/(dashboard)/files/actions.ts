@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import { safeStorageKey } from "@/lib/storage";
+import { fixUploadedFilename, safeStorageKey } from "@/lib/storage";
 
 export async function uploadFile(formData: FormData) {
   const profile = await requireProfile();
@@ -17,7 +17,8 @@ export async function uploadFile(formData: FormData) {
     redirect(`/files?error=${encodeURIComponent("الرجاء اختيار ملف")}`);
   }
 
-  const path = safeStorageKey(file!.name, "general");
+  const fileName = fixUploadedFilename(file!.name);
+  const path = safeStorageKey(fileName, "general");
   const { error: uploadError } = await supabase.storage
     .from("org-files")
     .upload(path, file!, { contentType: file!.type || undefined });
@@ -29,7 +30,7 @@ export async function uploadFile(formData: FormData) {
   const { error } = await supabase.from("files").insert({
     uploaded_by: profile.id,
     category,
-    file_name: file!.name,
+    file_name: fileName,
     file_url: path,
     file_size: file!.size,
   });
