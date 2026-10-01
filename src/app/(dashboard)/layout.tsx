@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const roleLabel = ROLE_LABELS_AR[profile.role];
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7f5] md:flex-row">
+    <div className="flex min-h-screen flex-col bg-[#f4f7f5] md:flex-row">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-l border-black/5 bg-white md:flex">
         <SidebarBody items={items} badges={badges} fullName={profile.full_name} roleLabel={roleLabel} />
       </aside>
