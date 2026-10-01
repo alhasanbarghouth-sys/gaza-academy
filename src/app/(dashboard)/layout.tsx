@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { navForRole, ROLE_LABELS_AR } from "@/lib/rbac";
 import SidebarNav from "./_components/SidebarNav";
 import SignOutButton from "./_components/SignOutButton";
@@ -10,6 +11,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (profile.must_change_password) redirect("/change-password");
   const items = navForRole(profile.role);
 
+  // RLS already limits these to whoever can actually see each page (broader
+  // management for appeals, only system_admin/executive_director for
+  // misconduct reports) — a role without access just gets 0 back, not an error.
+  const supabase = await createClient();
+  const [pendingAppeals, pendingMisconduct] = await Promise.all([
+    supabase.from("public_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("misconduct_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+  ]);
+  const badges: Record<string, number> = {
+    "/admin/appeals": pendingAppeals.count ?? 0,
+    "/admin/misconduct": pendingMisconduct.count ?? 0,
+  };
+
   return (
     <div className="flex min-h-screen bg-[#f4f7f5]">
       <aside className="sticky top-0 flex h-screen w-64 flex-col border-l border-black/5 bg-white">
@@ -17,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Image src="/logo.webp" alt="جمعية بسمة للثقافة والفنون" width={2000} height={667} priority className="h-9 w-auto" />
         </div>
 
-        <SidebarNav items={items} />
+        <SidebarNav items={items} badges={badges} />
 
         <div className="mt-auto border-t border-black/5 p-4">
           <p className="truncate text-sm font-semibold">{profile.full_name}</p>
