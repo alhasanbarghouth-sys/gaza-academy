@@ -99,12 +99,22 @@ ${JSON.stringify(context, null, 2)}`;
     return NextResponse.json({ conversationId, answer });
   } catch (err) {
     console.error("AI chat error", err);
-    if (err instanceof ApiError && err.status === 429) {
+    if (err instanceof ApiError) {
+      if (err.status === 429) {
+        return NextResponse.json(
+          { error: "تم تجاوز حد الاستخدام المجاني مؤقتًا — حاول مرة أخرى بعد دقيقة" },
+          { status: 429 }
+        );
+      }
+      // Surfaced temporarily while diagnosing the Gemini key setup — Google's
+      // own message here (e.g. "API key not valid") is safe to show; it never
+      // includes the key itself.
       return NextResponse.json(
-        { error: "تم تجاوز حد الاستخدام المجاني مؤقتًا — حاول مرة أخرى بعد دقيقة" },
-        { status: 429 }
+        { error: `خطأ من Gemini (${err.status}): ${err.message}` },
+        { status: 500 }
       );
     }
-    return NextResponse.json({ error: "حدث خطأ أثناء الاتصال بالمساعد الذكي" }, { status: 500 });
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `حدث خطأ أثناء الاتصال بالمساعد الذكي: ${detail}` }, { status: 500 });
   }
 }
