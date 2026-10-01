@@ -73,6 +73,18 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "👥",
     roles: ["system_admin", "executive_director"],
   },
+  {
+    href: "/admin/appeals",
+    label: "المناشدات",
+    icon: "📢",
+    roles: ["system_admin", "executive_director", "project_manager", "coordinator"],
+  },
+  {
+    href: "/admin/misconduct",
+    label: "بلاغات الإساءة",
+    icon: "🚩",
+    roles: ["system_admin", "executive_director"],
+  },
 ];
 
 export function navForRole(role: UserRole): NavItem[] {

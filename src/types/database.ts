@@ -129,6 +129,33 @@ export interface OrgFile {
   created_at: string;
 }
 
+export type PublicSubmissionStatus = "pending" | "in_review" | "resolved" | "investigating" | "closed";
+
+export interface PublicAppeal {
+  id: string;
+  full_name: string;
+  phone: string | null;
+  location: string | null;
+  message: string;
+  status: PublicSubmissionStatus;
+  reviewed_by: string | null;
+  review_note: string | null;
+  created_at: string;
+}
+
+export interface MisconductReport {
+  id: string;
+  reporter_name: string | null;
+  reporter_contact: string | null;
+  accused_name: string | null;
+  incident_description: string;
+  incident_location: string | null;
+  status: PublicSubmissionStatus;
+  reviewed_by: string | null;
+  review_note: string | null;
+  created_at: string;
+}
+
 export interface AiConversation {
   id: string;
   user_id: string;
