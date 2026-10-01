@@ -106,15 +106,13 @@ ${JSON.stringify(context, null, 2)}`;
           { status: 429 }
         );
       }
-      // Surfaced temporarily while diagnosing the Gemini key setup — Google's
-      // own message here (e.g. "API key not valid") is safe to show; it never
-      // includes the key itself.
-      return NextResponse.json(
-        { error: `خطأ من Gemini (${err.status}): ${err.message}` },
-        { status: 500 }
-      );
+      if (err.status === 503) {
+        return NextResponse.json(
+          { error: "خدمة Gemini مزدحمة حاليًا — حاول مرة أخرى خلال دقيقة" },
+          { status: 503 }
+        );
+      }
     }
-    const detail = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: `حدث خطأ أثناء الاتصال بالمساعد الذكي: ${detail}` }, { status: 500 });
+    return NextResponse.json({ error: "حدث خطأ أثناء الاتصال بالمساعد الذكي" }, { status: 500 });
   }
 }
