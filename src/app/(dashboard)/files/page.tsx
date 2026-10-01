@@ -1,8 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { uploadFile } from "./actions";
+import SubmitButton from "@/components/SubmitButton";
 
-const CATEGORIES = ["عقود", "سياسات", "نماذج", "صور", "تقارير", "أخرى"];
+const CATEGORIES = [
+  "تقرير حماية الطفل الشهري",
+  "تقرير الحماية من الاستغلال والانتهاك الجنسي (PSEA)",
+  "مناقصات ومشتريات",
+  "محاضر استلام وتسليم",
+  "تقارير مخزون",
+  "تقارير مالية سنوية",
+  "عقود",
+  "سياسات وإجراءات",
+  "نماذج",
+  "مراسلات الممولين",
+  "ملفات مستفيدين",
+  "صور وتوثيق",
+  "تقارير",
+  "أخرى",
+];
 
 export default async function FilesPage({
   searchParams,
@@ -17,7 +33,9 @@ export default async function FilesPage({
 
   const withUrls = await Promise.all(
     (files ?? []).map(async (f) => {
-      const { data } = await supabase.storage.from("org-files").createSignedUrl(f.file_url, 3600);
+      const { data } = await supabase.storage
+        .from("org-files")
+        .createSignedUrl(f.file_url, 3600, { download: f.file_name });
       return { ...f, signedUrl: data?.signedUrl ?? null };
     })
   );
@@ -49,7 +67,7 @@ export default async function FilesPage({
           <label className="label" htmlFor="file">الملف</label>
           <input id="file" name="file" type="file" required className="input" />
         </div>
-        <button type="submit" className="btn-primary">رفع الملف</button>
+        <SubmitButton pendingLabel="جارٍ الرفع...">رفع الملف</SubmitButton>
       </form>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

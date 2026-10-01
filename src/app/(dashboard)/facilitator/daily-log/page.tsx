@@ -4,6 +4,7 @@ import { ACTIVITY_TYPE_OPTIONS, ROLE_LABELS_AR } from "@/lib/rbac";
 import { createActivitySession } from "./actions";
 import CampPicker from "./_components/CampPicker";
 import { format } from "date-fns";
+import SubmitButton from "@/components/SubmitButton";
 
 export default async function DailyLogPage({
   searchParams,
@@ -137,7 +138,7 @@ export default async function DailyLogPage({
           <textarea id="challenges" name="challenges" rows={2} className="input" />
         </div>
 
-        <button type="submit" className="btn-primary">حفظ النشاط</button>
+        <SubmitButton pendingLabel="جارٍ الحفظ...">حفظ النشاط</SubmitButton>
       </form>
 
       <section>

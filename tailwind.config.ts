@@ -5,17 +5,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Sampled from the Basma Society logo's red (#e4291d).
         brand: {
-          50: "#eefbf3",
-          100: "#d6f5e1",
-          200: "#aeebc7",
-          300: "#7adba8",
-          400: "#45c186",
-          500: "#22a56c",
-          600: "#158556",
-          700: "#136a47",
-          800: "#12543a",
-          900: "#104631",
+          50: "#fdf2f1",
+          100: "#fbe1de",
+          200: "#f7c3bd",
+          300: "#f29b8f",
+          400: "#ea6655",
+          500: "#e4291d",
+          600: "#c41f15",
+          700: "#9e1912",
+          800: "#7a130e",
+          900: "#5c0f0b",
         },
       },
       fontFamily: {

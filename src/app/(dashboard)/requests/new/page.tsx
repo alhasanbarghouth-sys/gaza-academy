@@ -1,6 +1,7 @@
 import { createRequest } from "../actions";
 import { REQUEST_PRIORITY_LABELS_AR, REQUEST_TYPE_LABELS_AR, ROLE_LABELS_AR } from "@/lib/rbac";
 import type { UserRole } from "@/types/database";
+import SubmitButton from "@/components/SubmitButton";
 
 const RECIPIENT_ROLES: UserRole[] = [
   "executive_director",
@@ -73,7 +74,7 @@ export default async function NewRequestPage({
           <textarea id="message" name="message" required rows={5} className="input" placeholder="اشرح طلبك بالتفصيل..." />
         </div>
 
-        <button type="submit" className="btn-primary">إرسال الطلب</button>
+        <SubmitButton pendingLabel="جارٍ الإرسال...">إرسال الطلب</SubmitButton>
       </form>
     </div>
   );

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { safeStorageKey } from "@/lib/storage";
 
 export async function uploadFinancialReport(formData: FormData) {
   const profile = await requireProfile();
@@ -21,8 +22,9 @@ export async function uploadFinancialReport(formData: FormData) {
   }
 
   let file_url: string | null = null;
+  let file_name: string | null = null;
   if (file && file.size > 0) {
-    const path = `financial/${crypto.randomUUID()}-${file.name}`;
+    const path = safeStorageKey(file.name, "financial");
     const { error: uploadError } = await supabase.storage
       .from("org-files")
       .upload(path, file, { contentType: file.type || undefined });
@@ -31,6 +33,7 @@ export async function uploadFinancialReport(formData: FormData) {
       redirect(`/reports/financial?error=${encodeURIComponent(uploadError.message)}`);
     }
     file_url = path;
+    file_name = file.name;
   }
 
   const { error } = await supabase.from("financial_reports").insert({
@@ -40,6 +43,7 @@ export async function uploadFinancialReport(formData: FormData) {
     amount: amountRaw ? Number(amountRaw) : null,
     currency,
     file_url,
+    file_name,
     notes,
   });
 

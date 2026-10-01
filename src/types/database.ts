@@ -112,6 +112,7 @@ export interface FinancialReport {
   amount: number | null;
   currency: string;
   file_url: string | null;
+  file_name: string | null;
   notes: string | null;
   created_at: string;
 }

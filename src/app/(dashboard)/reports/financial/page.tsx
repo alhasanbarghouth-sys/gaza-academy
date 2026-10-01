@@ -2,6 +2,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { uploadFinancialReport } from "./actions";
 import { redirect } from "next/navigation";
+import SubmitButton from "@/components/SubmitButton";
 
 export default async function FinancialReportsPage({
   searchParams,
@@ -26,7 +27,9 @@ export default async function FinancialReportsPage({
   const withUrls = await Promise.all(
     (reports ?? []).map(async (r) => {
       if (!r.file_url) return { ...r, signedUrl: null as string | null };
-      const { data } = await supabase.storage.from("org-files").createSignedUrl(r.file_url, 3600);
+      const { data } = await supabase.storage
+        .from("org-files")
+        .createSignedUrl(r.file_url, 3600, { download: r.file_name ?? true });
       return { ...r, signedUrl: data?.signedUrl ?? null };
     })
   );
@@ -77,7 +80,7 @@ export default async function FinancialReportsPage({
             <label className="label" htmlFor="file">ملف التقرير (PDF / Excel)</label>
             <input id="file" name="file" type="file" className="input" accept=".pdf,.xlsx,.xls,.csv" />
           </div>
-          <button type="submit" className="btn-primary">رفع التقرير</button>
+          <SubmitButton pendingLabel="جارٍ الرفع...">رفع التقرير</SubmitButton>
         </form>
       )}
 

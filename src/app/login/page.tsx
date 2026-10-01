@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { signIn } from "./actions";
+import SubmitButton from "@/components/SubmitButton";
 
 export default async function LoginPage({
   searchParams,
@@ -11,11 +13,8 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-900 to-brand-700 px-4">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-2xl font-black text-white">
-            ب
-          </div>
-          <h1 className="text-xl font-bold text-gray-900">جمعية بسمة للثقافة والفنون</h1>
-          <p className="mt-1 text-sm text-gray-500">النظام المعلوماتي الموحّد</p>
+          <Image src="/logo.webp" alt="جمعية بسمة للثقافة والفنون" width={2000} height={667} priority className="mx-auto h-16 w-auto" />
+          <p className="mt-3 text-sm text-gray-500">النظام المعلوماتي الموحّد</p>
         </div>
 
         {error && (
@@ -50,9 +49,9 @@ export default async function LoginPage({
               dir="ltr"
             />
           </div>
-          <button type="submit" className="btn-primary w-full">
+          <SubmitButton className="btn-primary w-full" pendingLabel="جارٍ تسجيل الدخول...">
             تسجيل الدخول
-          </button>
+          </SubmitButton>
         </form>
 
         <p className="mt-6 text-center text-xs text-gray-400">
