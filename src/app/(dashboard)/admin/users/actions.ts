@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { normalizePhone, phoneToAuthEmail, toAsciiDigits } from "@/lib/phone";
 import { ROLE_LABELS_AR } from "@/lib/rbac";
 import type { UserRole } from "@/types/database";
@@ -169,8 +170,11 @@ export async function updateUserRole(formData: FormData) {
   const role = String(formData.get("role") ?? "") as UserRole;
   if (!id || !role) return;
 
-  const admin = createAdminClient();
-  await admin.from("profiles").update({ role }).eq("id", id);
+  // The signed-in admin's own session (RLS: profiles_admin_all), so the
+  // role-change audit trigger records who made the change.
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
+  if (error) redirect(`/admin/users?error=${encodeURIComponent(error.message)}`);
 
   revalidatePath("/admin/users");
 }

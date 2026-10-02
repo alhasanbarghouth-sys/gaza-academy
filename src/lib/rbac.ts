@@ -6,7 +6,11 @@ export type UserRole =
   | "accountant"
   | "donor"
   | "facilitator"
-  | "staff";
+  | "staff"
+  | "board_member"
+  | "archivist"
+  | "volunteer"
+  | "auditor";
 
 export const ROLE_LABELS_AR: Record<UserRole, string> = {
   system_admin: "مسؤول النظام",
@@ -17,6 +21,10 @@ export const ROLE_LABELS_AR: Record<UserRole, string> = {
   donor: "الممول",
   facilitator: "الميسر",
   staff: "موظف",
+  board_member: "عضو مجلس الإدارة",
+  archivist: "مسؤول الأرشيف",
+  volunteer: "متطوع",
+  auditor: "مدقق خارجي",
 };
 
 export const MANAGEMENT_ROLES: UserRole[] = [
@@ -58,7 +66,24 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "💰",
     roles: ["system_admin", "executive_director", "accountant", "donor", "project_manager"],
   },
-  { href: "/files", label: "الملفات", icon: "📁", roles: "all" },
+  { href: "/archive", label: "الأرشيف المؤسسي", icon: "🗄️", roles: "all" },
+  {
+    href: "/files",
+    label: "الملفات",
+    icon: "📁",
+    roles: [
+      "system_admin",
+      "executive_director",
+      "project_manager",
+      "coordinator",
+      "accountant",
+      "donor",
+      "facilitator",
+      "staff",
+      "board_member",
+      "archivist",
+    ],
+  },
   { href: "/search", label: "بحث شامل", icon: "🔎", roles: "all" },
   { href: "/ai", label: "المساعد الذكي", icon: "🤖", roles: "all" },
   {

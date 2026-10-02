@@ -3,6 +3,7 @@ import Link from "next/link";
 
 const NAV = [
   { href: "/public", label: "نظرة عامة" },
+  { href: "/public/archive", label: "الأرشيف العام" },
   { href: "/public/appeal", label: "تقديم مناشدة" },
   { href: "/public/report", label: "الإبلاغ عن إساءة" },
   { href: "/public/ai", label: "اسأل المساعد الذكي" },
