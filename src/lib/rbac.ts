@@ -87,6 +87,12 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/search", label: "بحث شامل", icon: "🔎", roles: "all" },
   { href: "/ai", label: "المساعد الذكي", icon: "🤖", roles: "all" },
   {
+    href: "/admin/facilitator-reports",
+    label: "تقارير الميسرين",
+    icon: "🗂️",
+    roles: ["system_admin", "executive_director", "project_manager", "coordinator"],
+  },
+  {
     href: "/admin/camps",
     label: "إدارة المخيمات",
     icon: "📍",

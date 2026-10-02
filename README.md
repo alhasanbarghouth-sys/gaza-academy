@@ -31,6 +31,7 @@
 4و. ثم [`0006_public_portal.sql`](./supabase/migrations/0006_public_portal.sql) — يضيف البوابة العامة (مناشدات، بلاغات إساءة).
 4ز. ثم [`0007_archive_roles.sql`](./supabase/migrations/0007_archive_roles.sql) **وحده** (استعلام مستقل) — يضيف أدوار الأرشيف: عضو مجلس الإدارة، مسؤول الأرشيف، متطوع، مدقق خارجي.
 4ح. ثم [`0008_archive.sql`](./supabase/migrations/0008_archive.sql) في استعلام جديد — ينشئ الأرشيف المؤسسي كاملاً (انظر القسم 7).
+4ط. ثم [`0009_activity_fix_and_categories.sql`](./supabase/migrations/0009_activity_fix_and_categories.sql) — يصلح خطأ «infinite recursion» عند حفظ نشاط الميسر، ويضيف فئات المستفيدين الثمانية وسؤال العنف المبني على النوع الاجتماعي. (لا يعتمد على 0007 و0008.)
 5. اذهب إلى **Authentication → Providers** وتأكد أن **Email** مفعّل. (لا داعي لتفعيل تسجيل ذاتي — الحسابات تُنشأ فقط من داخل النظام بواسطة المسؤول، وتسجيل الدخول في هذا النظام برقم الجوال لا بالبريد — انظر القسم أدناه).
 6. اذهب إلى **Authentication → URL Configuration** وأضف رابط موقعك (بعد نشره على Vercel في الخطوة 3) في **Site URL** و **Redirect URLs**.
 7. اذهب إلى **Project Settings → API** وانسخ ثلاث قيم ستحتاجها لاحقًا:

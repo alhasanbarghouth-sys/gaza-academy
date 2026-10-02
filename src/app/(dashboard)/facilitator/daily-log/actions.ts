@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { BENEFICIARY_CATEGORIES } from "@/lib/activity";
 
 export async function createActivitySession(formData: FormData) {
   const profile = await requireProfile();
@@ -15,10 +16,18 @@ export async function createActivitySession(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const challenges = String(formData.get("challenges") ?? "").trim() || null;
 
-  const beneficiaries_male = Number(formData.get("beneficiaries_male") ?? 0) || 0;
-  const beneficiaries_female = Number(formData.get("beneficiaries_female") ?? 0) || 0;
-  const beneficiaries_children = Number(formData.get("beneficiaries_children") ?? 0) || 0;
-  const beneficiaries_adults = Number(formData.get("beneficiaries_adults") ?? 0) || 0;
+  const counts: Record<string, number> = {};
+  for (const c of BENEFICIARY_CATEGORIES) {
+    counts[c.column] = Math.max(0, Math.floor(Number(formData.get(c.column) ?? 0) || 0));
+  }
+
+  // "Did you encounter GBV / sexual exploitation and abuse cases?" — counts only.
+  const gbv_encountered = formData.get("gbv_encountered") === "yes";
+  const gbv_cases_count = gbv_encountered ? Math.max(0, Math.floor(Number(formData.get("gbv_cases_count") ?? 0) || 0)) : 0;
+  const gbv_referred = gbv_encountered && formData.get("gbv_referred") === "on";
+  if (gbv_encountered && gbv_cases_count < 1) {
+    redirect(`/facilitator/daily-log?error=${encodeURIComponent("أدخل عدد حالات العنف المبني على النوع الاجتماعي / الانتهاك الجنسي التي واجهتها")}`);
+  }
 
   let camp_id = String(formData.get("camp_id") ?? "");
   const newCampName = String(formData.get("new_camp_name") ?? "").trim();
@@ -66,10 +75,10 @@ export async function createActivitySession(formData: FormData) {
       activity_date,
       description,
       challenges,
-      beneficiaries_male,
-      beneficiaries_female,
-      beneficiaries_children,
-      beneficiaries_adults,
+      ...counts,
+      gbv_encountered,
+      gbv_cases_count,
+      gbv_referred,
     })
     .select("id")
     .single();

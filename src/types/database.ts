@@ -56,6 +56,17 @@ export interface ActivitySession {
   beneficiaries_female: number;
   beneficiaries_children: number;
   beneficiaries_adults: number;
+  ben_men: number;
+  ben_women: number;
+  ben_men_disability: number;
+  ben_women_disability: number;
+  ben_boys: number;
+  ben_boys_disability: number;
+  ben_girls: number;
+  ben_girls_disability: number;
+  gbv_encountered: boolean;
+  gbv_cases_count: number;
+  gbv_referred: boolean;
   total_beneficiaries: number;
   description: string | null;
   challenges: string | null;

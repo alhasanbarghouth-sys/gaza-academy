@@ -5,6 +5,8 @@ import { createActivitySession } from "./actions";
 import CampPicker from "./_components/CampPicker";
 import { format } from "date-fns";
 import SubmitButton from "@/components/SubmitButton";
+import { BENEFICIARY_CATEGORIES } from "@/lib/activity";
+import GbvQuestion from "./_components/GbvQuestion";
 
 export default async function DailyLogPage({
   searchParams,
@@ -110,24 +112,16 @@ export default async function DailyLogPage({
         <div>
           <p className="label">عدد المستفيدين الفعلي لهذا النشاط (رقم واحد، غير مكرر لكل مشارك من الطاقم)</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div>
-              <label className="mb-1 block text-xs text-gray-500" htmlFor="beneficiaries_male">ذكور</label>
-              <input id="beneficiaries_male" name="beneficiaries_male" type="number" min={0} defaultValue={0} className="input" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500" htmlFor="beneficiaries_female">إناث</label>
-              <input id="beneficiaries_female" name="beneficiaries_female" type="number" min={0} defaultValue={0} className="input" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500" htmlFor="beneficiaries_children">أطفال</label>
-              <input id="beneficiaries_children" name="beneficiaries_children" type="number" min={0} defaultValue={0} className="input" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500" htmlFor="beneficiaries_adults">بالغون</label>
-              <input id="beneficiaries_adults" name="beneficiaries_adults" type="number" min={0} defaultValue={0} className="input" />
-            </div>
+            {BENEFICIARY_CATEGORIES.map((c) => (
+              <div key={c.column}>
+                <label className="mb-1 block text-xs text-gray-500" htmlFor={c.column}>{c.label}</label>
+                <input id={c.column} name={c.column} type="number" min={0} defaultValue={0} className="input" />
+              </div>
+            ))}
           </div>
         </div>
+
+        <GbvQuestion />
 
         <div>
           <label className="label" htmlFor="description">وصف النشاط</label>

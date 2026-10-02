@@ -1,11 +1,21 @@
 import PrintButton from "./PrintButton";
+import { BENEFICIARY_CATEGORIES } from "@/lib/activity";
 
 interface AggregatedData {
   period: { from: string; to: string };
   who: { project: string; beneficiaries: number }[];
   what: { type: string; count: number; beneficiaries: number }[];
   where: { location: string; beneficiaries: number }[];
-  forWhom: { male: number; female: number; children: number; adults: number; total: number };
+  forWhom: {
+    male: number;
+    female: number;
+    children: number;
+    adults: number;
+    total: number;
+    withDisability?: number;
+    categories?: Record<string, number>;
+  };
+  gbv?: { activitiesWithCases: number; cases: number; referredCases: number };
   activitiesCount: number;
 }
 
@@ -46,6 +56,38 @@ export default function ReportView({
           <p className="text-2xl font-black text-brand-700">{data.activitiesCount}</p>
         </div>
       </div>
+
+      {data.forWhom.categories && (
+        <div>
+          <p className="mb-2 text-sm font-bold">فئات المستفيدين</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {BENEFICIARY_CATEGORIES.map((c) => (
+              <div key={c.column} className="rounded-xl border border-black/5 p-3 text-center">
+                <p className="text-xs text-gray-500">{c.label}</p>
+                <p className="text-lg font-bold">{data.forWhom.categories?.[c.column] ?? 0}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            إجمالي الأشخاص ذوي الإعاقة: <span className="font-semibold">{data.forWhom.withDisability ?? 0}</span>
+          </p>
+        </div>
+      )}
+
+      {data.gbv && (
+        <div className="rounded-xl border border-black/5 p-4">
+          <p className="mb-2 text-sm font-bold">العنف المبني على النوع الاجتماعي والاستغلال/الانتهاك الجنسي</p>
+          {data.gbv.cases === 0 ? (
+            <p className="text-sm text-gray-600">لم تُسجَّل حالات ضمن المستفيدين في هذه الفترة.</p>
+          ) : (
+            <p className="text-sm text-gray-700">
+              سُجّلت <span className="font-bold">{data.gbv.cases}</span> حالة في{" "}
+              <span className="font-bold">{data.gbv.activitiesWithCases}</span> نشاط، أُحيل منها{" "}
+              <span className="font-bold">{data.gbv.referredCases}</span> عبر مسار الإحالة. (أعداد فقط، دون بيانات تعريفية)
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div>
