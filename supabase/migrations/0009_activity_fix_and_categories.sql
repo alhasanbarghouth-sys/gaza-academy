@@ -99,6 +99,13 @@ alter table public.activity_sessions
 alter table public.activity_sessions
   add column if not exists gbv_encountered  boolean not null default false,
   add column if not exists gbv_cases_count  int not null default 0 check (gbv_cases_count >= 0),
-  add column if not exists gbv_referred     boolean not null default false,
+  add column if not exists gbv_referred     boolean not null default false;
+
+alter table public.activity_sessions drop constraint if exists activity_sessions_gbv_consistent;
+alter table public.activity_sessions
   add constraint activity_sessions_gbv_consistent
     check (gbv_encountered or (gbv_cases_count = 0 and not gbv_referred));
+
+-- Make the API pick up the new columns immediately (otherwise Supabase can
+-- keep answering "could not find the column ... in the schema cache").
+notify pgrst, 'reload schema';
