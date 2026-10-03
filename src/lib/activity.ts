@@ -50,3 +50,7 @@ export function demographics(rows: SessionCounts[]) {
   }
   return d;
 }
+
+/** The association's projects. A daily report covers exactly one; work on several projects in a day is reported once per project. */
+export const PROJECTS = ["Gerda Henkel", "Enabel Belgium", "Indigo Australia", "NPA"] as const;
+export const OTHER_PROJECT = "other";

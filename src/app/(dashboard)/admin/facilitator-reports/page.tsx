@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, subDays, subMonths } from "date-fns";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isManagementRole, ROLE_LABELS_AR } from "@/lib/rbac";
-import { BENEFICIARY_CATEGORIES, GBV_TYPE_LABELS, type SessionCounts } from "@/lib/activity";
+import { BENEFICIARY_CATEGORIES, GBV_TYPE_LABELS, OTHER_PROJECT, PROJECTS, type SessionCounts } from "@/lib/activity";
 import PeoplePicker, { type Person } from "@/components/PeoplePicker";
 import type { UserRole } from "@/types/database";
 
@@ -54,7 +54,7 @@ const gbvOf = (r: Row): GbvReport | null =>
 export default async function FacilitatorReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ f?: string | string[]; from?: string; to?: string; by?: string }>;
+  searchParams: Promise<{ f?: string | string[]; from?: string; to?: string; by?: string; p?: string }>;
 }) {
   const sp = await searchParams;
   const profile = await requireProfile();
@@ -65,6 +65,7 @@ export default async function FacilitatorReportsPage({
   const to = DATE.test(sp.to ?? "") ? sp.to! : today;
   const from = DATE.test(sp.from ?? "") ? sp.from! : format(subDays(new Date(), 30), "yyyy-MM-dd");
   const by: "submitted" | "activity" = sp.by === "activity" ? "activity" : "submitted";
+  const project = sp.p === OTHER_PROJECT || (PROJECTS as readonly string[]).includes(sp.p ?? "") ? sp.p! : "";
 
   const supabase = await createClient();
 
@@ -102,6 +103,8 @@ export default async function FacilitatorReportsPage({
             .gte("created_at", `${from}T00:00:00${gazaOffset(from)}`)
             .lte("created_at", `${to}T23:59:59.999${gazaOffset(to)}`)
             .order("created_at", { ascending: false });
+    if (project === OTHER_PROJECT) q = q.not("project_name", "in", `(${PROJECTS.map((n) => `"${n}"`).join(",")})`);
+    else if (project) q = q.eq("project_name", project);
     return sessionIds ? q.in("id", sessionIds) : q;
   };
 
@@ -141,6 +144,7 @@ export default async function FacilitatorReportsPage({
   ];
   const presetHref = (p: { from: string; to: string }) => {
     const qs = new URLSearchParams({ from: p.from, to: p.to, by });
+    if (project) qs.set("p", project);
     selected.forEach((id) => qs.append("f", id));
     return `/admin/facilitator-reports?${qs}`;
   };
@@ -155,10 +159,22 @@ export default async function FacilitatorReportsPage({
       </div>
 
       <form method="get" className="card space-y-4">
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr_1fr]">
-          <div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-2 lg:col-span-1">
             <p className="label">الميسرون</p>
             <PeoplePicker people={people} name="f" initial={selected} placeholder="كل الميسرين" />
+          </div>
+          <div>
+            <label className="label" htmlFor="p">المشروع</label>
+            <select id="p" name="p" defaultValue={project} className="input">
+              <option value="">كل المشاريع</option>
+              {PROJECTS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+              <option value={OTHER_PROJECT}>مشاريع أخرى</option>
+            </select>
           </div>
           <div>
             <label className="label" htmlFor="by">التصفية حسب</label>

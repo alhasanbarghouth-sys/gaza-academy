@@ -1,13 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import { ACTIVITY_TYPE_OPTIONS, ROLE_LABELS_AR } from "@/lib/rbac";
-import { createActivitySession } from "./actions";
-import CampPicker from "./_components/CampPicker";
+import { ROLE_LABELS_AR } from "@/lib/rbac";
 import { format } from "date-fns";
-import SubmitButton from "@/components/SubmitButton";
-import { BENEFICIARY_CATEGORIES } from "@/lib/activity";
-import GbvQuestion from "./_components/GbvQuestion";
-import PeoplePicker, { type Person } from "@/components/PeoplePicker";
+import type { Person } from "@/components/PeoplePicker";
+import DailyLogForm from "./_components/DailyLogForm";
 import type { UserRole } from "@/types/database";
 
 const FIELD_ROLES: UserRole[] = ["facilitator", "volunteer"];
@@ -66,80 +62,14 @@ export default async function DailyLogPage({
 
       {saved && (
         <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-          تم حفظ النشاط بنجاح.
+          {Number(saved) > 1 ? `تم حفظ ${saved} تقارير بنجاح (تقرير لكل مشروع).` : "تم حفظ النشاط بنجاح."}
         </div>
       )}
       {error && (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
       )}
 
-      <form action={createActivitySession} className="card space-y-5">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="activity_date">التاريخ</label>
-            <input
-              id="activity_date"
-              name="activity_date"
-              type="date"
-              required
-              defaultValue={format(new Date(), "yyyy-MM-dd")}
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="activity_type">نوع النشاط</label>
-            <select id="activity_type" name="activity_type" required className="input">
-              {ACTIVITY_TYPE_OPTIONS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="project_name">اسم المشروع / البرنامج</label>
-            <input id="project_name" name="project_name" required className="input" />
-          </div>
-          <CampPicker camps={camps.data ?? []} />
-        </div>
-
-        <div>
-          <p className="label">اشتغلت مع (اختر كل من شاركك هذا النشاط)</p>
-          <p className="mb-2 text-xs text-gray-400">
-            مهم: أدخل عدد المستفيدين الفعلي والإجمالي لهذا النشاط مرة واحدة فقط — سواء اشتغلتم عليه شخص واحد أو
-            عدة أشخاص، حتى لا يتكرر احتساب نفس المستفيدين لكل شخص من الطاقم.
-          </p>
-          <PeoplePicker people={people} name="participants" />
-        </div>
-
-        <div>
-          <p className="label">عدد المستفيدين الفعلي لهذا النشاط (رقم واحد، غير مكرر لكل مشارك من الطاقم)</p>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {BENEFICIARY_CATEGORIES.map((c) => (
-              <div key={c.column}>
-                <label className="mb-1 block text-xs text-gray-500" htmlFor={c.column}>{c.label}</label>
-                <input id={c.column} name={c.column} type="number" min={0} defaultValue={0} className="input" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <GbvQuestion />
-
-        <div>
-          <label className="label" htmlFor="description">وصف النشاط</label>
-          <textarea id="description" name="description" rows={3} className="input" />
-        </div>
-        <div>
-          <label className="label" htmlFor="challenges">تحديات واجهتها (اختياري)</label>
-          <textarea id="challenges" name="challenges" rows={2} className="input" />
-        </div>
-
-        <SubmitButton pendingLabel="جارٍ الحفظ...">حفظ النشاط</SubmitButton>
-      </form>
+      <DailyLogForm camps={camps.data ?? []} people={people} today={format(new Date(), "yyyy-MM-dd")} />
 
       <section>
         <h2 className="mb-3 text-lg font-bold">أنشطتي الأخيرة</h2>

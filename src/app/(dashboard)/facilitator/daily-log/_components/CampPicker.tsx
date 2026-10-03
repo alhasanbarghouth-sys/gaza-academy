@@ -3,15 +3,15 @@
 import { useState } from "react";
 import type { Camp } from "@/types/database";
 
-export default function CampPicker({ camps }: { camps: Camp[] }) {
+export default function CampPicker({ camps, prefix = "" }: { camps: Camp[]; prefix?: string }) {
   const [isNew, setIsNew] = useState(false);
 
   return (
     <div>
-      <label className="label" htmlFor="camp_id">المخيم / الموقع</label>
+      <label className="label" htmlFor={`${prefix}camp_id`}>المخيم / الموقع</label>
       <select
-        id="camp_id"
-        name="camp_id"
+        id={`${prefix}camp_id`}
+        name={`${prefix}camp_id`}
         required
         className="input"
         defaultValue=""
@@ -31,7 +31,7 @@ export default function CampPicker({ camps }: { camps: Camp[] }) {
 
       {isNew && (
         <input
-          name="new_camp_name"
+          name={`${prefix}new_camp_name`}
           required
           placeholder="اكتب اسم المخيم الجديد"
           className="input mt-2"
