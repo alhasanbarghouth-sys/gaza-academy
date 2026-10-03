@@ -1,13 +1,21 @@
 export const BENEFICIARY_CATEGORIES = [
-  { column: "ben_men", label: "رجال" },
-  { column: "ben_women", label: "نساء" },
+  { column: "ben_men", label: "رجال بدون إعاقة" },
   { column: "ben_men_disability", label: "رجال بإعاقة" },
+  { column: "ben_women", label: "نساء بدون إعاقة" },
   { column: "ben_women_disability", label: "نساء بإعاقة" },
-  { column: "ben_boys", label: "أولاد" },
-  { column: "ben_girls", label: "بنات" },
-  { column: "ben_boys_disability", label: "أولاد بإعاقة" },
-  { column: "ben_girls_disability", label: "بنات بإعاقة" },
+  { column: "ben_boys", label: "طفل بدون إعاقة" },
+  { column: "ben_boys_disability", label: "طفل بإعاقة" },
+  { column: "ben_girls", label: "طفلة بدون إعاقة" },
+  { column: "ben_girls_disability", label: "طفلة بإعاقة" },
 ] as const;
+
+export const GBV_TYPES = [
+  { value: "sexual", label: "عنف جنسي" },
+  { value: "physical", label: "عنف جسدي" },
+  { value: "psychological", label: "عنف نفسي" },
+] as const;
+
+export const GBV_TYPE_LABELS: Record<string, string> = Object.fromEntries(GBV_TYPES.map((t) => [t.value, t.label]));
 
 export type BeneficiaryColumn = (typeof BENEFICIARY_CATEGORIES)[number]["column"];
 

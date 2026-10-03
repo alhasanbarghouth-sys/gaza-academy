@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import { BENEFICIARY_CATEGORIES } from "@/lib/activity";
+import { BENEFICIARY_CATEGORIES, GBV_TYPES } from "@/lib/activity";
 
 export async function createActivitySession(formData: FormData) {
   const profile = await requireProfile();
@@ -25,8 +25,19 @@ export async function createActivitySession(formData: FormData) {
   const gbv_encountered = formData.get("gbv_encountered") === "yes";
   const gbv_cases_count = gbv_encountered ? Math.max(0, Math.floor(Number(formData.get("gbv_cases_count") ?? 0) || 0)) : 0;
   const gbv_referred = gbv_encountered && formData.get("gbv_referred") === "on";
-  if (gbv_encountered && gbv_cases_count < 1) {
-    redirect(`/facilitator/daily-log?error=${encodeURIComponent("أدخل عدد حالات العنف المبني على النوع الاجتماعي / الانتهاك الجنسي التي واجهتها")}`);
+  const allowedTypes: string[] = GBV_TYPES.map((t) => t.value);
+  const gbv_types = formData.getAll("gbv_types").map(String).filter((t) => allowedTypes.includes(t));
+  const gbv_details = String(formData.get("gbv_details") ?? "").trim();
+  if (gbv_encountered) {
+    const problem =
+      gbv_cases_count < 1
+        ? "أدخل عدد حالات العنف المبني على النوع الاجتماعي"
+        : gbv_types.length === 0
+          ? "اختر نوع العنف: جنسي أو جسدي أو نفسي"
+          : !gbv_details
+            ? "اكتب تفاصيل الحالة"
+            : null;
+    if (problem) redirect(`/facilitator/daily-log?error=${encodeURIComponent(problem)}`);
   }
 
   let camp_id = String(formData.get("camp_id") ?? "");
@@ -93,6 +104,18 @@ export async function createActivitySession(formData: FormData) {
   await supabase
     .from("activity_session_participants")
     .insert(participantIds.map((profile_id) => ({ session_id: session!.id, profile_id })));
+
+  if (gbv_encountered) {
+    const { error: gbvError } = await supabase.from("activity_gbv_reports").insert({
+      session_id: session!.id,
+      violence_types: gbv_types,
+      details: gbv_details,
+      created_by: profile.id,
+    });
+    if (gbvError) {
+      redirect(`/facilitator/daily-log?error=${encodeURIComponent(`حُفظ النشاط لكن تعذّر حفظ تفاصيل حالة العنف: ${gbvError.message}`)}`);
+    }
+  }
 
   revalidatePath("/facilitator/daily-log");
   redirect("/facilitator/daily-log?saved=1");

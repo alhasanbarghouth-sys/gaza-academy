@@ -51,7 +51,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/facilitator/daily-log",
     label: "سجل النشاط اليومي",
     icon: "📝",
-    roles: ["facilitator"],
+    roles: ["facilitator", "volunteer"],
   },
   { href: "/requests", label: "الطلبات", icon: "📨", roles: "all" },
   {

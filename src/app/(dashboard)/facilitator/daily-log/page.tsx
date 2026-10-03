@@ -7,6 +7,11 @@ import { format } from "date-fns";
 import SubmitButton from "@/components/SubmitButton";
 import { BENEFICIARY_CATEGORIES } from "@/lib/activity";
 import GbvQuestion from "./_components/GbvQuestion";
+import PeoplePicker, { type Person } from "@/components/PeoplePicker";
+import type { UserRole } from "@/types/database";
+
+const FIELD_ROLES: UserRole[] = ["facilitator", "volunteer"];
+const EXCLUDED_ROLES: UserRole[] = ["donor", "auditor"];
 
 export default async function DailyLogPage({
   searchParams,
@@ -38,6 +43,17 @@ export default async function DailyLogPage({
   const myRows = (mySessions.data ?? []).filter((s: any) =>
     s.activity_session_participants.some((p: any) => p.profile_id === profile.id)
   );
+
+  // Every facilitator and volunteer in the system first, then the rest of the staff.
+  const people: Person[] = ((colleagues.data ?? []) as { id: string; full_name: string; role: UserRole }[])
+    .filter((c) => !EXCLUDED_ROLES.includes(c.role))
+    .map((c) => ({
+      id: c.id,
+      full_name: c.full_name,
+      roleLabel: ROLE_LABELS_AR[c.role],
+      group: FIELD_ROLES.includes(c.role) ? "الميسرون والمتطوعون" : "باقي الطاقم",
+    }))
+    .sort((a, b) => (a.group === b.group ? a.full_name.localeCompare(b.full_name, "ar") : a.group === "الميسرون والمتطوعون" ? -1 : 1));
 
   return (
     <div className="space-y-8">
@@ -90,24 +106,14 @@ export default async function DailyLogPage({
           <CampPicker camps={camps.data ?? []} />
         </div>
 
-        {colleagues.data && colleagues.data.length > 0 && (
-          <div>
-            <p className="label">اشتغلت مع (اختر كل من شاركك هذا النشاط)</p>
-            <p className="mb-2 text-xs text-gray-400">
-              مهم: أدخل عدد المستفيدين الفعلي والإجمالي لهذا النشاط مرة واحدة فقط — سواء اشتغلتم عليه شخص واحد أو
-              عدة أشخاص، حتى لا يتكرر احتساب نفس المستفيدين لكل شخص من الطاقم.
-            </p>
-            <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-black/10 p-3 sm:grid-cols-3">
-              {colleagues.data.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="participants" value={c.id} />
-                  {c.full_name}
-                  <span className="text-xs text-gray-400">({ROLE_LABELS_AR[c.role as keyof typeof ROLE_LABELS_AR]})</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
+        <div>
+          <p className="label">اشتغلت مع (اختر كل من شاركك هذا النشاط)</p>
+          <p className="mb-2 text-xs text-gray-400">
+            مهم: أدخل عدد المستفيدين الفعلي والإجمالي لهذا النشاط مرة واحدة فقط — سواء اشتغلتم عليه شخص واحد أو
+            عدة أشخاص، حتى لا يتكرر احتساب نفس المستفيدين لكل شخص من الطاقم.
+          </p>
+          <PeoplePicker people={people} name="participants" />
+        </div>
 
         <div>
           <p className="label">عدد المستفيدين الفعلي لهذا النشاط (رقم واحد، غير مكرر لكل مشارك من الطاقم)</p>
