@@ -25,11 +25,11 @@ export default async function ArchiveOverviewPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <div className="card !p-4 sm:!p-6">
           <p className="text-xs text-gray-500 sm:text-sm">مستندات تملك صلاحية رؤيتها</p>
-          <p className="mt-2 text-3xl font-black text-brand-700">{(visible ?? []).length}</p>
+          <p className="mt-2 text-3xl font-bold text-brand-700">{(visible ?? []).length}</p>
         </div>
         <Link href="/archive/incomplete" className="card !p-4 transition hover:shadow-md sm:!p-6">
           <p className="text-xs text-gray-500 sm:text-sm">روابطها الإلزامية ناقصة</p>
-          <p className="mt-2 text-3xl font-black text-orange-600">{incomplete ?? 0}</p>
+          <p className="mt-2 text-3xl font-bold text-orange-600">{incomplete ?? 0}</p>
         </Link>
         <div className="card col-span-2 flex flex-col justify-between gap-3 lg:col-span-1">
           <form action="/archive/search" className="flex gap-2">

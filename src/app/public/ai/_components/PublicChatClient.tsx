@@ -59,7 +59,7 @@ export default function PublicChatClient() {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}>
             <div
-              className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${
+              className={`max-w-[80%] whitespace-pre-wrap rounded-xl px-4 py-2.5 text-sm ${
                 m.role === "user" ? "bg-gray-100 text-gray-800" : "bg-brand-600 text-white"
               }`}
             >

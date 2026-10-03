@@ -38,84 +38,66 @@ export function isManagementRole(role: UserRole) {
   return MANAGEMENT_ROLES.includes(role);
 }
 
+export type NavIcon =
+  | "dashboard"
+  | "daily-log"
+  | "requests"
+  | "reports"
+  | "financial"
+  | "archive"
+  | "files"
+  | "search"
+  | "assistant"
+  | "facilitator-reports"
+  | "camps"
+  | "users"
+  | "appeals"
+  | "misconduct";
+
+export type NavSection = "main" | "field" | "information" | "admin";
+
+export const NAV_SECTION_LABELS: Record<NavSection, string> = {
+  main: "الرئيسية",
+  field: "العمل الميداني والتقارير",
+  information: "المعلومات والأرشيف",
+  admin: "الإدارة والمتابعة",
+};
+
 export interface NavItem {
   href: string;
   label: string;
-  icon: string; // simple emoji/glyph, no icon lib dependency
+  icon: NavIcon;
+  section: NavSection;
   roles: UserRole[] | "all";
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "لوحة التحكم", icon: "📊", roles: "all" },
-  {
-    href: "/facilitator/daily-log",
-    label: "سجل النشاط اليومي",
-    icon: "📝",
-    roles: ["facilitator", "volunteer"],
-  },
-  { href: "/requests", label: "الطلبات والمراسلات", icon: "📨", roles: "all" },
+  { href: "/dashboard", label: "لوحة التحكم", icon: "dashboard", section: "main", roles: "all" },
+  { href: "/requests", label: "الطلبات والمراسلات", icon: "requests", section: "main", roles: "all" },
+  { href: "/search", label: "بحث شامل", icon: "search", section: "main", roles: "all" },
+  { href: "/ai", label: "المساعد الذكي", icon: "assistant", section: "main", roles: "all" },
+  { href: "/facilitator/daily-log", label: "سجل النشاط اليومي", icon: "daily-log", section: "field", roles: ["facilitator", "volunteer"] },
+  { href: "/admin/facilitator-reports", label: "تقارير الميسرين", icon: "facilitator-reports", section: "field", roles: ["system_admin", "executive_director", "project_manager", "coordinator"] },
   {
     href: "/reports",
     label: "التقارير (5W / أوتشا)",
-    icon: "📈",
+    icon: "reports",
+    section: "field",
     roles: ["system_admin", "executive_director", "project_manager", "coordinator", "donor"],
   },
   {
     href: "/reports/financial",
     label: "التقارير المالية",
-    icon: "💰",
+    icon: "financial",
+    section: "field",
     roles: ["system_admin", "executive_director", "accountant", "donor", "project_manager"],
   },
-  { href: "/archive", label: "الأرشيف المؤسسي", icon: "🗄️", roles: "all" },
-  {
-    href: "/files",
-    label: "الملفات",
-    icon: "📁",
-    roles: [
-      "system_admin",
-      "executive_director",
-      "project_manager",
-      "coordinator",
-      "accountant",
-      "donor",
-      "facilitator",
-      "staff",
-      "board_member",
-      "archivist",
-    ],
-  },
-  { href: "/search", label: "بحث شامل", icon: "🔎", roles: "all" },
-  { href: "/ai", label: "المساعد الذكي", icon: "🤖", roles: "all" },
-  {
-    href: "/admin/facilitator-reports",
-    label: "تقارير الميسرين",
-    icon: "🗂️",
-    roles: ["system_admin", "executive_director", "project_manager", "coordinator"],
-  },
-  {
-    href: "/admin/camps",
-    label: "إدارة المخيمات",
-    icon: "📍",
-    roles: ["system_admin", "executive_director", "project_manager", "coordinator"],
-  },
-  {
-    href: "/admin/users",
-    label: "إدارة المستخدمين",
-    icon: "👥",
-    roles: ["system_admin", "executive_director"],
-  },
-  {
-    href: "/admin/appeals",
-    label: "المناشدات",
-    icon: "📢",
-    roles: ["system_admin", "executive_director", "project_manager", "coordinator"],
-  },
-  {
-    href: "/admin/misconduct",
-    label: "بلاغات الإساءة",
-    icon: "🚩",
-    roles: ["system_admin", "executive_director"],
-  },
+  { href: "/archive", label: "الأرشيف المؤسسي", icon: "archive", section: "information", roles: "all" },
+  { href: "/files", label: "الملفات", icon: "files", section: "information", roles: ["system_admin", "executive_director", "project_manager", "coordinator", "accountant", "donor", "facilitator", "staff", "board_member", "archivist"] },
+  { href: "/admin/camps", label: "إدارة المخيمات", icon: "camps", section: "admin", roles: ["system_admin", "executive_director", "project_manager", "coordinator"] },
+  { href: "/admin/users", label: "إدارة المستخدمين", icon: "users", section: "admin", roles: ["system_admin", "executive_director"] },
+  { href: "/admin/appeals", label: "المناشدات", icon: "appeals", section: "admin", roles: ["system_admin", "executive_director", "project_manager", "coordinator"] },
+  { href: "/admin/misconduct", label: "بلاغات الإساءة", icon: "misconduct", section: "admin", roles: ["system_admin", "executive_director"] },
 ];
 
 export function navForRole(role: UserRole): NavItem[] {

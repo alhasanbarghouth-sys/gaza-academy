@@ -144,7 +144,7 @@ export default async function DailyLogPage({
       <section>
         <h2 className="mb-3 text-lg font-bold">أنشطتي الأخيرة</h2>
         {myRows.length > 0 ? (
-          <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-black/5 bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-black/5 bg-gray-50 text-right text-gray-500">

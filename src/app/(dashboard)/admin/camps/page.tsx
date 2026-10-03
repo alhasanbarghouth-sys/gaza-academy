@@ -56,7 +56,7 @@ export default async function CampsAdminPage({
         <input name="notes" placeholder="ملاحظات (اختياري)" className="input sm:col-span-5" />
       </form>
 
-      <div className="overflow-x-auto rounded-2xl border border-black/5 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-black/5 bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-black/5 bg-gray-50 text-right text-gray-500">

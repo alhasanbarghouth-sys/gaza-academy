@@ -1,3 +1,4 @@
+import { Megaphone, ShieldAlert, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { getPublicImpactStats } from "@/lib/public/stats";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="card text-center">
-      <p className="text-3xl font-black text-brand-700">{value.toLocaleString("ar-EG")}</p>
+      <p className="text-3xl font-bold text-brand-700">{value.toLocaleString("ar-EG")}</p>
       <p className="mt-1 text-sm text-gray-500">{label}</p>
     </div>
   );
@@ -38,15 +39,18 @@ export default async function PublicHomePage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Link href="/public/appeal" className="card block text-center transition hover:shadow-md">
-          <p className="text-lg font-bold">📢 تقديم مناشدة</p>
+          <Megaphone aria-hidden className="mx-auto mb-2 h-6 w-6 text-brand-700" strokeWidth={1.75} />
+          <p className="text-base font-bold">تقديم مناشدة</p>
           <p className="mt-1 text-sm text-gray-500">هل تحتاج مساعدة؟ أرسل مناشدتك وسيتواصل معك فريقنا.</p>
         </Link>
         <Link href="/public/report" className="card block text-center transition hover:shadow-md">
-          <p className="text-lg font-bold">🚩 الإبلاغ عن إساءة</p>
+          <ShieldAlert aria-hidden className="mx-auto mb-2 h-6 w-6 text-brand-700" strokeWidth={1.75} />
+          <p className="text-base font-bold">الإبلاغ عن إساءة</p>
           <p className="mt-1 text-sm text-gray-500">بلاغ سري يصل مباشرة للإدارة العليا فقط. يمكن إرساله دون ذكر اسمك.</p>
         </Link>
         <Link href="/public/ai" className="card block text-center transition hover:shadow-md">
-          <p className="text-lg font-bold">🤖 المساعد الذكي</p>
+          <Sparkles aria-hidden className="mx-auto mb-2 h-6 w-6 text-brand-700" strokeWidth={1.75} />
+          <p className="text-base font-bold">المساعد الذكي</p>
           <p className="mt-1 text-sm text-gray-500">اسأل عن عمل الجمعية وأنشطتها.</p>
         </Link>
       </div>

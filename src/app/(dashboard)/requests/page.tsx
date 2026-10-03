@@ -145,7 +145,7 @@ export default async function RequestsPage({
           {tab === "inbox" ? "لا توجد طلبات واردة." : "لم ترسل أي طلبات بعد."}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-black/5 bg-white">
+        <div className="overflow-hidden rounded-xl border border-black/5 bg-white">
           <div className="hidden grid-cols-[7rem_1fr_12rem_9rem_8rem] gap-3 border-b border-black/5 bg-gray-50 px-4 py-2.5 text-xs font-medium text-gray-500 md:grid">
             <span>النوع</span>
             <span>العنوان</span>

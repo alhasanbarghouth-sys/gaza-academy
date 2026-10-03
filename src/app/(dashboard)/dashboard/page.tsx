@@ -1,3 +1,4 @@
+import { Send, Sparkles } from "lucide-react";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isManagementRole, REQUEST_STATUS_LABELS_AR, ROLE_LABELS_AR } from "@/lib/rbac";
@@ -7,7 +8,7 @@ function StatCard({ label, value, hint }: { label: string; value: string | numbe
   return (
     <div className="card">
       <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-black text-brand-700">{value}</p>
+      <p className="mt-2 text-3xl font-bold text-brand-700">{value}</p>
       {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
     </div>
   );
@@ -52,10 +53,10 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">
-          أهلاً {profile.full_name.split(" ")[0]} 👋
+          أهلاً {profile.full_name.split(" ")[0]}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          {ROLE_LABELS_AR[profile.role]} · {format(new Date(), "EEEE d MMMM yyyy")}
+          {ROLE_LABELS_AR[profile.role]} · {new Date().toLocaleDateString("ar-EG-u-nu-latn", { timeZone: "Asia/Gaza", weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </p>
       </div>
 
@@ -103,13 +104,23 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <a href="/requests/new" className="card block transition hover:shadow-md">
-          <p className="text-lg font-bold">📨 إنشاء طلب جديد</p>
+        <a href="/requests/new" className="card flex items-start gap-4 transition hover:border-gray-300">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+            <Send aria-hidden className="h-5 w-5" strokeWidth={1.75} />
+          </span>
+          <span>
+          <p className="text-base font-bold">إنشاء طلب جديد</p>
           <p className="mt-1 text-sm text-gray-500">أرسل طلبًا ماليًا أو لوجستيًا أو إداريًا للإدارة.</p>
+          </span>
         </a>
-        <a href="/ai" className="card block transition hover:shadow-md">
-          <p className="text-lg font-bold">🤖 اسأل المساعد الذكي</p>
+        <a href="/ai" className="card flex items-start gap-4 transition hover:border-gray-300">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+            <Sparkles aria-hidden className="h-5 w-5" strokeWidth={1.75} />
+          </span>
+          <span>
+          <p className="text-base font-bold">اسأل المساعد الذكي</p>
           <p className="mt-1 text-sm text-gray-500">استفسر عن أي بيانات أو تقرير موجود في النظام.</p>
+          </span>
         </a>
       </div>
 

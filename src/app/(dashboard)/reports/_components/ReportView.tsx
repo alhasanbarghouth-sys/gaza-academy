@@ -41,7 +41,7 @@ export default function ReportView({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl bg-gray-50 p-4 text-center">
           <p className="text-xs text-gray-500">إجمالي المستفيدين</p>
-          <p className="text-2xl font-black text-brand-700">{data.forWhom.total}</p>
+          <p className="text-2xl font-bold text-brand-700">{data.forWhom.total}</p>
         </div>
         <div className="rounded-xl bg-gray-50 p-4 text-center">
           <p className="text-xs text-gray-500">ذكور / إناث</p>
@@ -53,7 +53,7 @@ export default function ReportView({
         </div>
         <div className="rounded-xl bg-gray-50 p-4 text-center">
           <p className="text-xs text-gray-500">عدد الأنشطة</p>
-          <p className="text-2xl font-black text-brand-700">{data.activitiesCount}</p>
+          <p className="text-2xl font-bold text-brand-700">{data.activitiesCount}</p>
         </div>
       </div>
 

@@ -7,7 +7,7 @@ export default async function AiPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">🤖 المساعد الذكي</h1>
+        <h1 className="text-2xl font-bold">المساعد الذكي</h1>
         <p className="mt-1 text-sm text-gray-500">
           مدعوم بـ Gemini — يرى بيانات النظام المتاحة لصلاحياتك، ويمكنه الإجابة عن أي سؤال آخر أيضًا.
         </p>
