@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { generate5WReport, generateOchaWeeklyReport } from "./actions";
 import ReportView from "./_components/ReportView";
+import FiveWExport from "./_components/FiveWExport";
 import { format } from "date-fns";
 import { redirect } from "next/navigation";
 
@@ -32,6 +33,16 @@ export default async function ReportsPage() {
       .limit(12),
   ]);
 
+  let unlinkedCamps = 0;
+  if (canGenerate) {
+    const { data: used } = await supabase.from("activity_sessions").select("camp_id, camps(cccm_site)").not("camp_id", "is", null);
+    unlinkedCamps = new Set(
+      ((used ?? []) as unknown as { camp_id: string; camps: { cccm_site: string | null } | null }[])
+        .filter((u) => !u.camps?.cccm_site)
+        .map((u) => u.camp_id)
+    ).size;
+  }
+
   return (
     <div className="space-y-10">
       <div>
@@ -40,6 +51,10 @@ export default async function ReportsPage() {
           تقرير 5W الشهري (بصيغة اليونيسف) وتقرير أوتشا الأسبوعي — يتم توليدهما تلقائيًا من سجل الأنشطة اليومية.
         </p>
       </div>
+
+      {canGenerate && (
+        <FiveWExport focalName={profile.full_name} focalMobile={profile.phone ?? ""} unlinkedCamps={unlinkedCamps} />
+      )}
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -2,7 +2,7 @@
 -- 0010 — run after 0009. Safe to run more than once.
 --   1. GBV case details from the daily activity log (restricted table)
 --   2. Internal requests: permissions re-applied + reply thread
---   3. Camps linked to the official CCCM site list (for the 5W Excel export)
+--   3. Camps linked to the official site list of the 5Ws template (Excel export)
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -104,9 +104,14 @@ create trigger request_messages_touch
   for each row execute function public.touch_request_on_message();
 
 -- ----------------------------------------------------------------------------
--- 3. Official CCCM Site ID for each camp (e.g. GZA4154), used to fill
---    governorate, neighbourhood, site type and site name in the 5Ws tracker.
+-- 3. Each camp linked once to its entry in the CP AoR 5Ws template's official
+--    site lists, so the exported tracker uses the exact dropdown values
+--    (governorate, site type, "English / Arabic" site name, community).
 -- ----------------------------------------------------------------------------
-alter table public.camps add column if not exists site_code text;
+alter table public.camps
+  add column if not exists cccm_governorate text,
+  add column if not exists cccm_site_type   text,
+  add column if not exists cccm_site        text,
+  add column if not exists cccm_community   text;
 
 notify pgrst, 'reload schema';

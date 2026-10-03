@@ -74,3 +74,42 @@ export async function deleteCamp(formData: FormData) {
   revalidatePath("/admin/camps");
   revalidatePath("/facilitator/daily-log");
 }
+
+export async function searchOfficialSites(q: string) {
+  const profile = await requireProfile();
+  if (!isManagementRole(profile.role)) return [];
+  const { searchSites, guessCommunity } = await import("@/lib/fivew/data");
+  return searchSites(q).map((s) => ({ gov: s.gov, type: s.type, value: s.value, nb: s.nb, guess: guessCommunity(s) }));
+}
+
+/** Links a camp to its entry in the 5Ws template's official site list. */
+export async function linkCampSite(formData: FormData) {
+  const profile = await requireProfile();
+  if (!isManagementRole(profile.role)) throw new Error("غير مصرح");
+  const { CPAOR, findSite } = await import("@/lib/fivew/data");
+
+  const id = String(formData.get("id") ?? "");
+  const [gov, type, value] = String(formData.get("site") ?? "").split("||");
+  const community = String(formData.get("community") ?? "");
+  const unlink = formData.get("unlink") === "1";
+
+  const site = findSite(gov, type, value);
+  if (!unlink && !site) redirect(`/admin/camps?error=${encodeURIComponent("اختر موقعاً من القائمة الرسمية")}`);
+  if (!unlink && community && !(CPAOR.communities[site!.gov] ?? []).includes(community)) {
+    redirect(`/admin/camps?error=${encodeURIComponent("المنطقة غير موجودة في قائمة المحافظة")}`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("camps")
+    .update(
+      unlink
+        ? { cccm_governorate: null, cccm_site_type: null, cccm_site: null, cccm_community: null }
+        : { cccm_governorate: site!.gov, cccm_site_type: site!.type, cccm_site: site!.value, cccm_community: community || null }
+    )
+    .eq("id", id);
+  if (error) redirect(`/admin/camps?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/admin/camps");
+  redirect(`/admin/camps?linked=1#camp-${id}`);
+}
