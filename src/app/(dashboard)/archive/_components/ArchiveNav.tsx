@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/archive", label: "نظرة عامة", exact: true },
   { href: "/archive/new", label: "إدراج مستند" },
+  { href: "/archive/bulk", label: "إدراج ذكي (دفعات)" },
   { href: "/archive/search", label: "بحث" },
   { href: "/archive/entities", label: "الكيانات" },
   { href: "/archive/incomplete", label: "نواقص الربط" },

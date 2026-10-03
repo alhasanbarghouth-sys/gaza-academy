@@ -133,6 +133,12 @@ export type NewDocumentInput = {
 };
 
 export async function createDocument(input: NewDocumentInput): Promise<Result<{ id: string; archive_number: string }>> {
+  return fileDocument(input, false);
+}
+
+// keepUpload: the AI intake queue keeps the uploaded file when filing fails, so
+// the reviewer can fix the description and try again.
+async function fileDocument(input: NewDocumentInput, keepUpload: boolean): Promise<Result<{ id: string; archive_number: string }>> {
   const profile = await requireProfile();
   if (!input.storage_path.startsWith(`${profile.id}/`)) return { error: "مسار الملف غير صالح" };
 
@@ -144,7 +150,7 @@ export async function createDocument(input: NewDocumentInput): Promise<Result<{ 
     p: { ...input, sha256: fp.sha256, file_size: fp.size },
   });
   if (error) {
-    await discardUpload(input.storage_path);
+    if (!keepUpload) await discardUpload(input.storage_path);
     return { error: error.message };
   }
   revalidatePath("/archive");
@@ -331,4 +337,77 @@ export async function revokeGrant(formData: FormData) {
   const { error } = await supabase.rpc("archive_revoke_grant", { p_id: String(formData.get("id") ?? "") });
   revalidatePath("/archive/access");
   redirect(`/archive/access?${error ? `error=${encodeURIComponent(error.message)}` : "saved=1"}`);
+}
+
+// ---- AI-assisted bulk intake: files wait in the uploader's own queue with the
+//      AI's proposal until a person approves them ------------------------------------
+
+export async function queueBulkUpload(input: {
+  path: string;
+  name: string;
+  type: string;
+  size: number;
+}): Promise<Result<{ id: string }>> {
+  const profile = await requireProfile();
+  if (!input.path.startsWith(`${profile.id}/`)) return { error: "مسار الملف غير صالح" };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("archive_intake_queue")
+    .insert({
+      created_by: profile.id,
+      storage_path: input.path,
+      file_name: input.name.slice(0, 250),
+      mime_type: input.type || null,
+      file_size: Math.max(0, Math.floor(input.size)),
+    })
+    .select("id")
+    .single();
+  if (error || !data) return { error: error?.message ?? "تعذّر تسجيل الملف في قائمة المراجعة" };
+  return { id: data.id };
+}
+
+export async function fileQueuedDocument(
+  id: string,
+  input: Omit<NewDocumentInput, "storage_path" | "file_name" | "mime_type">
+): Promise<Result<{ id: string; archive_number: string }>> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { data: item } = await supabase.from("archive_intake_queue").select("*").eq("id", id).maybeSingle();
+  if (!item) return { error: "الملف غير موجود في قائمة المراجعة" };
+  if (item.status === "filed") return { error: "حُفظ هذا الملف مسبقاً" };
+
+  const res = await fileDocument(
+    { ...input, storage_path: item.storage_path, file_name: item.file_name, mime_type: item.mime_type ?? undefined },
+    true
+  );
+  if ("error" in res && res.error) return res;
+  const doc = res as { id: string; archive_number: string };
+  await supabase
+    .from("archive_intake_queue")
+    .update({ status: "filed", document_id: doc.id, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  revalidatePath("/archive/bulk");
+  return doc;
+}
+
+export async function discardQueued(id: string): Promise<Result> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { data: item } = await supabase.from("archive_intake_queue").select("id, status, storage_path").eq("id", id).maybeSingle();
+  if (!item) return { error: "الملف غير موجود في قائمة المراجعة" };
+  if (item.status === "filed") return { error: "حُفظ هذا الملف في قاعدة البيانات ولا يُحذف من هنا" };
+  await discardUpload(item.storage_path);
+  await supabase.from("archive_intake_queue").delete().eq("id", id);
+  revalidatePath("/archive/bulk");
+  return {};
+}
+
+export async function previewQueued(id: string): Promise<Result<{ url: string }>> {
+  await requireProfile();
+  const supabase = await createClient();
+  const { data: item } = await supabase.from("archive_intake_queue").select("storage_path, status").eq("id", id).maybeSingle();
+  if (!item || item.status === "filed") return { error: "الملف غير موجود" };
+  const { data, error } = await createAdminClient().storage.from(BUCKET).createSignedUrl(item.storage_path, 300);
+  if (error || !data) return { error: error?.message ?? "تعذّرت المعاينة" };
+  return { url: data.signedUrl };
 }
