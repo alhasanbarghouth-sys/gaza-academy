@@ -5,8 +5,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { BENEFICIARY_CATEGORIES, GBV_TYPES, OTHER_PROJECT, PROJECTS } from "@/lib/activity";
+import { createDocument } from "@/app/(dashboard)/archive/actions";
 
 const MAX_BLOCKS = 6;
+const MAX_FILES_PER_PROJECT = 30;
+
+type Attachment = { path: string; name: string; type: string };
 
 type Block = {
   project_name: string;
@@ -22,6 +26,7 @@ type Block = {
   gbv_types: string[];
   gbv_details: string;
   coworkers: string[];
+  files: Attachment[];
 };
 
 function fail(message: string): never {
@@ -77,6 +82,19 @@ function readBlock(formData: FormData, p: string, label: string): Block {
     gbv_types,
     gbv_details,
     coworkers: formData.getAll(`${p}participants`).map(String).filter(Boolean),
+    files: formData
+      .getAll(`${p}files`)
+      .flatMap((v) => {
+        try {
+          const f = JSON.parse(String(v));
+          return typeof f?.path === "string" && typeof f?.name === "string"
+            ? [{ path: f.path, name: f.name.slice(0, 200), type: typeof f.type === "string" ? f.type : "" }]
+            : [];
+        } catch {
+          return [];
+        }
+      })
+      .slice(0, MAX_FILES_PER_PROJECT),
   };
 }
 
@@ -160,6 +178,69 @@ export async function createActivitySession(formData: FormData) {
     if (gbvError) fail(`حُفظ النشاط لكن تعذّر حفظ تفاصيل حالة العنف: ${gbvError.message}`);
   }
 
+  const { attached, problems } = await fileAttachments(withIds, activity_date, profile);
+
   revalidatePath("/facilitator/daily-log");
-  redirect(`/facilitator/daily-log?saved=${blocks.length}`);
+  const qs = new URLSearchParams({ saved: String(blocks.length) });
+  if (attached) qs.set("files", String(attached));
+  if (problems.length) qs.set("warn", `حُفظ التقرير، لكن تعذّر حفظ بعض المرفقات: ${problems.join(" | ")}`);
+  redirect(`/facilitator/daily-log?${qs}`);
+}
+
+/**
+ * Files each project's photos and documents in the institutional database,
+ * inside that report's activity folder (one per day and project). The report
+ * itself is already saved; a failed attachment is reported, never fatal.
+ */
+async function fileAttachments(
+  blocks: (Block & { session_id: string })[],
+  activity_date: string,
+  profile: { id: string; full_name: string }
+) {
+  let attached = 0;
+  const problems: string[] = [];
+  const withFiles = blocks.filter((b) => b.files.length);
+  if (!withFiles.length) return { attached, problems };
+
+  const supabase = await createClient();
+  const { data: camps } = await supabase.from("camps").select("id, name").in("id", withFiles.map((b) => b.camp_id));
+  const campName = new Map((camps ?? []).map((c) => [c.id as string, c.name as string]));
+
+  for (const b of withFiles) {
+    const { data: folder, error } = await supabase.rpc("activity_archive_folder", { p_session_id: b.session_id });
+    if (error || !folder) {
+      problems.push(`${b.project_name}: ${error?.message ?? "تعذّر تجهيز مجلد النشاط"}`);
+      continue;
+    }
+    const { activity_id, project_id } = folder as { activity_id: string; project_id: string };
+    const camp = campName.get(b.camp_id) ?? "";
+    const files = b.files.filter((f) => f.path.startsWith(`${profile.id}/`));
+
+    for (const [i, f] of files.entries()) {
+      const media = /^(image|video)\//.test(f.type);
+      const kind = f.type.startsWith("video/") ? "فيديو" : media ? "صورة" : "مرفق";
+      const res = await createDocument({
+        doc_type: media ? "activity_media" : "activity_attachment",
+        category_code: media ? "07.07" : "07.09",
+        title: `${kind} — ${b.activity_type} — ${b.project_name} — ${camp} — ${activity_date}${files.length > 1 ? ` (${i + 1} من ${files.length})` : ""}`,
+        document_date: activity_date,
+        source: `سجل النشاط اليومي — ${profile.full_name}`,
+        responsible: profile.full_name,
+        record_status: "original",
+        sensitivity: media ? 2 : 1,
+        language: "ar",
+        keywords: [b.project_name, camp, b.activity_type, "سجل النشاط اليومي"].filter(Boolean).join("، "),
+        storage_path: f.path,
+        file_name: f.name,
+        mime_type: f.type || undefined,
+        links: [
+          { link_type: "proves", target_entity_id: activity_id },
+          { link_type: "belongs_to", target_entity_id: project_id },
+        ],
+      });
+      if ("error" in res && res.error) problems.push(`${f.name}: ${res.error}`);
+      else attached++;
+    }
+  }
+  return { attached, problems };
 }

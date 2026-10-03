@@ -11,7 +11,7 @@ type PublicDoc = {
   archive_document_versions: { id: string; version_no: number; file_name: string; file_size: number }[];
 };
 
-export const metadata = { title: "الأرشيف العام — جمعية بسمة للثقافة والفنون" };
+export const metadata = { title: "الوثائق العامة — جمعية بسمة للثقافة والفنون" };
 
 export default async function PublicArchivePage() {
   const supabase = await createClient();
@@ -34,9 +34,9 @@ export default async function PublicArchivePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">الأرشيف العام</h1>
+        <h1 className="text-2xl font-bold">الوثائق العامة</h1>
         <p className="mt-1 text-sm text-gray-500">
-          المواد المصنفة «عامة» في أرشيف الجمعية: الهوية والتأسيس، الإصدارات، البيانات الرسمية، الجوائز والاعتمادات. لا يظهر هنا أي
+          المواد المصنفة «عامة» في قاعدة البيانات المؤسسية للجمعية: الهوية والتأسيس، الإصدارات، البيانات الرسمية، الجوائز والاعتمادات. لا يظهر هنا أي
           مستند داخلي أو مقيّد.
         </p>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import DropZone from "@/components/DropZone";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArchiveCategory, ArchiveDocType, ArchiveLinkRule, EntityType, LinkType } from "@/types/database";
@@ -153,10 +154,10 @@ export default function IntakeForm({
   if (insertable.length === 0) {
     return (
       <div className="card text-sm text-gray-600">
-        <p className="font-bold text-gray-900">لا تملك صلاحية إدراج مستندات في الأرشيف.</p>
+        <p className="font-bold text-gray-900">لا تملك صلاحية إدراج مستندات في قاعدة البيانات المؤسسية.</p>
         <p className="mt-2">
           الصلاحيات مطبقة حسب مصفوفة الأدوار في المخطط التصنيفي (الباب 8). مدير النظام التقني مثلاً لا يُدرج ولا يقرأ محتوى
-          الأرشيف (مبدأ فصل المهام) إلا سجلات النسخ الاحتياطي 16.04. لإضافة صلاحية، يمنح المدير التنفيذي تفويضاً من صفحة
+          قاعدة البيانات المؤسسية (مبدأ فصل المهام) إلا سجلات النسخ الاحتياطي 16.04. لإضافة صلاحية، يمنح المدير التنفيذي تفويضاً من صفحة
           «الصلاحيات والسجلات».
         </p>
       </div>
@@ -329,7 +330,7 @@ export default function IntakeForm({
         </div>
         {sensitivity === 0 && (
           <p className="rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
-            S0 = عام: سيظهر هذا المستند في الأرشيف العام لأي زائر دون تسجيل دخول، ما لم تكن حالته «مسودة». ارفع الدرجة إن لم يكن
+            S0 = عام: سيظهر هذا المستند في صفحة «الوثائق العامة» لأي زائر دون تسجيل دخول، ما لم تكن حالته «مسودة». ارفع الدرجة إن لم يكن
             منشوراً أصلاً.
           </p>
         )}
@@ -415,7 +416,7 @@ export default function IntakeForm({
 
       <section className="card space-y-3">
         <h2 className="text-lg font-bold">4. الملف</h2>
-        <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="input" required />
+        <DropZone required onFiles={(fs) => setFile(fs[0] ?? null)} />
         {file && (
           <p className="text-xs text-gray-500">
             {file.name} · {formatBytes(file.size)} — تُحسب البصمة الرقمية (SHA-256) على الخادم بعد الرفع ولا تتغير.

@@ -23,6 +23,7 @@ type Row = SessionCounts & {
   gbv_cases_count: number;
   gbv_referred: boolean;
   created_by: string;
+  archive_entity_id?: string | null;
   camps: { name: string } | null;
   creator: { full_name: string } | null;
   activity_gbv_reports: GbvReport | GbvReport[] | null;
@@ -269,7 +270,14 @@ export default async function FacilitatorReportsPage({
                   )}
                 </summary>
                 <div className="space-y-4 border-t border-black/5 p-4 text-sm">
-                  <p className="text-xs text-gray-500">فريق النشاط: {team.join("، ") || "—"}</p>
+                  <p className="text-xs text-gray-500">
+                    فريق النشاط: {team.join("، ") || "—"}
+                    {r.archive_entity_id && (
+                      <Link href={`/archive/entities/${r.archive_entity_id}`} className="mr-3 font-semibold text-brand-700 hover:underline">
+                        صور ومرفقات النشاط
+                      </Link>
+                    )}
+                  </p>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {BENEFICIARY_CATEGORIES.map((c) => (
                       <div key={c.column} className="rounded-lg bg-gray-50 px-3 py-2 text-center">

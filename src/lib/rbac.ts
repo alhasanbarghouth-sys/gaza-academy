@@ -22,7 +22,7 @@ export const ROLE_LABELS_AR: Record<UserRole, string> = {
   facilitator: "الميسر",
   staff: "موظف",
   board_member: "عضو مجلس الإدارة",
-  archivist: "مسؤول الأرشيف",
+  archivist: "مسؤول قاعدة البيانات المؤسسية",
   volunteer: "متطوع",
   auditor: "مدقق خارجي",
 };
@@ -59,7 +59,7 @@ export type NavSection = "main" | "field" | "information" | "admin";
 export const NAV_SECTION_LABELS: Record<NavSection, string> = {
   main: "الرئيسية",
   field: "العمل الميداني والتقارير",
-  information: "المعلومات والأرشيف",
+  information: "المعلومات المؤسسية",
   admin: "الإدارة والمتابعة",
 };
 
@@ -92,7 +92,7 @@ export const NAV_ITEMS: NavItem[] = [
     section: "field",
     roles: ["system_admin", "executive_director", "accountant", "donor", "project_manager"],
   },
-  { href: "/archive", label: "الأرشيف المؤسسي", icon: "archive", section: "information", roles: "all" },
+  { href: "/archive", label: "قاعدة البيانات المؤسسية", icon: "archive", section: "information", roles: "all" },
   { href: "/files", label: "الملفات", icon: "files", section: "information", roles: ["system_admin", "executive_director", "project_manager", "coordinator", "accountant", "donor", "facilitator", "staff", "board_member", "archivist"] },
   { href: "/admin/camps", label: "إدارة المخيمات", icon: "camps", section: "admin", roles: ["system_admin", "executive_director", "project_manager", "coordinator"] },
   { href: "/admin/users", label: "إدارة المستخدمين", icon: "users", section: "admin", roles: ["system_admin", "executive_director"] },

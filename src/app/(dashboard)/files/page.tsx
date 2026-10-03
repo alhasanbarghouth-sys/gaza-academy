@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { uploadFile } from "./actions";
+import DropZone from "@/components/DropZone";
 import SubmitButton from "@/components/SubmitButton";
 
 const CATEGORIES = [
@@ -63,9 +64,9 @@ export default async function FilesPage({
             ))}
           </select>
         </div>
-        <div className="flex-1">
-          <label className="label" htmlFor="file">الملف</label>
-          <input id="file" name="file" type="file" required className="input" />
+        <div className="w-full flex-1 sm:min-w-[18rem]">
+          <p className="label">الملف</p>
+          <DropZone id="file" name="file" required />
         </div>
         <SubmitButton pendingLabel="جارٍ الرفع...">رفع الملف</SubmitButton>
       </form>

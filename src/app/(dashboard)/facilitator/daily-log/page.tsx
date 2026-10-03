@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { ROLE_LABELS_AR } from "@/lib/rbac";
@@ -12,9 +13,9 @@ const EXCLUDED_ROLES: UserRole[] = ["donor", "auditor"];
 export default async function DailyLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; files?: string; warn?: string }>;
 }) {
-  const { error, saved } = await searchParams;
+  const { error, saved, files, warn } = await searchParams;
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -63,8 +64,10 @@ export default async function DailyLogPage({
       {saved && (
         <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
           {Number(saved) > 1 ? `تم حفظ ${saved} تقارير بنجاح (تقرير لكل مشروع).` : "تم حفظ النشاط بنجاح."}
+          {Number(files) > 0 && ` وحُفظ ${files} من المرفقات في قاعدة البيانات المؤسسية.`}
         </div>
       )}
+      {warn && <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">{warn}</div>}
       {error && (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
       )}
@@ -84,6 +87,7 @@ export default async function DailyLogPage({
                   <th className="p-3 font-medium">المخيم</th>
                   <th className="p-3 font-medium">المستفيدون</th>
                   <th className="p-3 font-medium">شارك معك</th>
+                  <th className="p-3 font-medium">المرفقات</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,6 +103,15 @@ export default async function DailyLogPage({
                         .map((p: any) => p.profiles?.full_name)
                         .filter((n: string) => n && n !== profile.full_name)
                         .join("، ") || "—"}
+                    </td>
+                    <td className="p-3 text-xs">
+                      {a.archive_entity_id ? (
+                        <Link href={`/archive/entities/${a.archive_entity_id}`} className="font-medium text-brand-700 hover:underline">
+                          مجلد النشاط
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                   </tr>
                 ))}

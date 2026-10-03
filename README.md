@@ -34,6 +34,7 @@
 4ط. ثم [`0009_activity_fix_and_categories.sql`](./supabase/migrations/0009_activity_fix_and_categories.sql) — يصلح خطأ «infinite recursion» عند حفظ نشاط الميسر، ويضيف فئات المستفيدين الثمانية وسؤال العنف المبني على النوع الاجتماعي. (لا يعتمد على 0007 و0008.)
 4ي. ثم [`0010_gbv_requests_sites.sql`](./supabase/migrations/0010_gbv_requests_sites.sql) — تفاصيل حالات العنف المبني على النوع الاجتماعي (مقيّدة بالإدارة)، الردود داخل الطلبات وإعادة ضبط صلاحياتها، وربط المخيمات بالقائمة الرسمية لملف 5Ws.
 4ك. ثم [`0011_request_hiding.sql`](./supabase/migrations/0011_request_hiding.sql) — حذف الطلبات والردود «من عندي فقط»: يختفي ما يحذفه المستخدم من عنده فقط ويبقى لدى الطرف الآخر وفي السجل.
+4ل. ثم [`0012_activity_attachments.sql`](./supabase/migrations/0012_activity_attachments.sql) — صور وملفات تقارير النشاط اليومي: مجلد لكل نشاط (يوم + مشروع) في قاعدة البيانات المؤسسية. يتطلب 0007 و0008.
 5. اذهب إلى **Authentication → Providers** وتأكد أن **Email** مفعّل. (لا داعي لتفعيل تسجيل ذاتي — الحسابات تُنشأ فقط من داخل النظام بواسطة المسؤول، وتسجيل الدخول في هذا النظام برقم الجوال لا بالبريد — انظر القسم أدناه).
 6. اذهب إلى **Authentication → URL Configuration** وأضف رابط موقعك (بعد نشره على Vercel في الخطوة 3) في **Site URL** و **Redirect URLs**.
 7. اذهب إلى **Project Settings → API** وانسخ ثلاث قيم ستحتاجها لاحقًا:

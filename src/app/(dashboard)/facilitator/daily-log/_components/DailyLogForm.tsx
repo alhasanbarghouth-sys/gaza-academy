@@ -8,6 +8,7 @@ import SubmitButton from "@/components/SubmitButton";
 import type { Camp } from "@/types/database";
 import CampPicker from "./CampPicker";
 import GbvQuestion from "./GbvQuestion";
+import ActivityAttachments from "./ActivityAttachments";
 import { createActivitySession } from "../actions";
 
 const MAX_BLOCKS = 6;
@@ -132,6 +133,8 @@ export default function DailyLogForm({ camps, people, today }: { camps: Camp[]; 
               <label className="label" htmlFor={`${p}challenges`}>تحديات واجهتها (اختياري)</label>
               <textarea id={`${p}challenges`} name={`${p}challenges`} rows={2} className="input" />
             </div>
+
+            <ActivityAttachments prefix={p} />
           </section>
         );
       })}
