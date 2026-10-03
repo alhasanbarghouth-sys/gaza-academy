@@ -6,11 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import type { RequestPriority, RequestStatus, RequestType, UserRole } from "@/types/database";
 
+const UUID = /^[0-9a-f-]{36}$/i;
+
 export async function createRequest(formData: FormData) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
   const recipient_role = String(formData.get("recipient_role") ?? "") as UserRole;
+  const recipientIdRaw = String(formData.get("recipient_id") ?? "");
+  const recipient_id = UUID.test(recipientIdRaw) ? recipientIdRaw : null;
   const request_type = String(formData.get("request_type") ?? "other") as RequestType;
   const priority = String(formData.get("priority") ?? "normal") as RequestPriority;
   const title = String(formData.get("title") ?? "").trim();
@@ -23,6 +27,7 @@ export async function createRequest(formData: FormData) {
   const { error } = await supabase.from("requests").insert({
     requester_id: profile.id,
     recipient_role,
+    recipient_id,
     request_type,
     priority,
     title,
@@ -33,8 +38,8 @@ export async function createRequest(formData: FormData) {
     redirect(`/requests/new?error=${encodeURIComponent(error.message)}`);
   }
 
-  revalidatePath("/requests");
-  redirect("/requests?created=1");
+  revalidatePath("/requests", "layout");
+  redirect("/requests?tab=sent&created=1");
 }
 
 export async function respondToRequest(formData: FormData) {
@@ -44,18 +49,34 @@ export async function respondToRequest(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as RequestStatus;
   const response_note = String(formData.get("response_note") ?? "").trim() || null;
+  if (!UUID.test(id) || !status) return;
 
-  if (!id || !status) return;
-
-  await supabase
+  const { error } = await supabase
     .from("requests")
     .update({
       status,
       response_note,
       responded_by: profile.id,
       responded_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 
-  revalidatePath("/requests");
+  revalidatePath("/requests", "layout");
+  redirect(`/requests?open=${id}${error ? `&error=${encodeURIComponent(error.message)}` : ""}#r-${id}`);
+}
+
+export async function addRequestMessage(formData: FormData) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const request_id = String(formData.get("request_id") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  const tab = String(formData.get("tab") ?? "inbox") === "sent" ? "sent" : "inbox";
+  if (!UUID.test(request_id) || !body) return;
+
+  const { error } = await supabase.from("request_messages").insert({ request_id, author_id: profile.id, body });
+
+  revalidatePath("/requests", "layout");
+  redirect(`/requests?tab=${tab}&open=${request_id}${error ? `&error=${encodeURIComponent(error.message)}` : ""}#r-${request_id}`);
 }

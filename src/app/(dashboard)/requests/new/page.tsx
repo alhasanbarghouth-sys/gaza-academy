@@ -2,6 +2,8 @@ import { createRequest } from "../actions";
 import { REQUEST_PRIORITY_LABELS_AR, REQUEST_TYPE_LABELS_AR, ROLE_LABELS_AR } from "@/lib/rbac";
 import type { UserRole } from "@/types/database";
 import SubmitButton from "@/components/SubmitButton";
+import { requireProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 const RECIPIENT_ROLES: UserRole[] = [
   "executive_director",
@@ -17,6 +19,15 @@ export default async function NewRequestPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  const profile = await requireProfile();
+  const supabase = await createClient();
+  const { data: people } = await supabase
+    .from("profiles")
+    .select("id, full_name, role")
+    .eq("is_active", true)
+    .neq("id", profile.id)
+    .in("role", RECIPIENT_ROLES)
+    .order("full_name");
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -51,6 +62,21 @@ export default async function NewRequestPage({
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="label" htmlFor="recipient_id">شخص محدد (اختياري)</label>
+          <select id="recipient_id" name="recipient_id" className="input" defaultValue="">
+            <option value="">كل من يحمل الدور المختار</option>
+            {(people ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.full_name} — {ROLE_LABELS_AR[p.role as UserRole]}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-400">
+            يصل الطلب دائماً إلى المدير التنفيذي ومسؤول النظام أيضاً، وإلى الشخص المحدد إن اخترته.
+          </p>
         </div>
 
         <div>

@@ -14,11 +14,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // management for appeals, only system_admin/executive_director for
   // misconduct reports) — a role without access just gets 0 back, not an error.
   const supabase = await createClient();
-  const [pendingAppeals, pendingMisconduct] = await Promise.all([
+  const [pendingAppeals, pendingMisconduct, pendingRequests] = await Promise.all([
     supabase.from("public_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("misconduct_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    // Requests waiting for this user's answer (RLS limits it to what they receive).
+    supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pending").neq("requester_id", profile.id),
   ]);
   const badges: Record<string, number> = {
+    "/requests": pendingRequests.count ?? 0,
     "/admin/appeals": pendingAppeals.count ?? 0,
     "/admin/misconduct": pendingMisconduct.count ?? 0,
   };

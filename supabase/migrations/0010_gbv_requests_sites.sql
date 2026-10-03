@@ -85,6 +85,24 @@ create policy request_messages_insert on public.request_messages
     and exists (select 1 from public.requests r where r.id = request_id)
   );
 
+-- A reply moves the request to the top of both inboxes.
+create or replace function public.touch_request_on_message()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.requests set updated_at = now() where id = new.request_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists request_messages_touch on public.request_messages;
+create trigger request_messages_touch
+  after insert on public.request_messages
+  for each row execute function public.touch_request_on_message();
+
 -- ----------------------------------------------------------------------------
 -- 3. Official CCCM Site ID for each camp (e.g. GZA4154), used to fill
 --    governorate, neighbourhood, site type and site name in the 5Ws tracker.

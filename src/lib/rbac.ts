@@ -53,7 +53,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "📝",
     roles: ["facilitator", "volunteer"],
   },
-  { href: "/requests", label: "الطلبات", icon: "📨", roles: "all" },
+  { href: "/requests", label: "الطلبات والمراسلات", icon: "📨", roles: "all" },
   {
     href: "/reports",
     label: "التقارير (5W / أوتشا)",
