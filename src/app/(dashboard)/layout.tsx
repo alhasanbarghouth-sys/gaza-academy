@@ -19,7 +19,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     supabase.from("public_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("misconduct_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     // Requests waiting for this user's answer (RLS limits it to what they receive).
-    supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pending").neq("requester_id", profile.id),
+    // Requests the user deleted for themselves are not counted.
+    supabase
+      .from("requests")
+      .select("id, request_hidden(profile_id)", { count: "exact", head: true })
+      .is("request_hidden", null)
+      .eq("status", "pending")
+      .neq("requester_id", profile.id)
+      .then((res) =>
+        res.error
+          ? supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pending").neq("requester_id", profile.id)
+          : res
+      ),
   ]);
   const badges: Record<string, number> = {
     "/requests": pendingRequests.count ?? 0,

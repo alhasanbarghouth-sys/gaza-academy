@@ -80,3 +80,38 @@ export async function addRequestMessage(formData: FormData) {
   revalidatePath("/requests", "layout");
   redirect(`/requests?tab=${tab}&open=${request_id}${error ? `&error=${encodeURIComponent(error.message)}` : ""}#r-${request_id}`);
 }
+
+/** Deletes a request for the current user only; the other side keeps it. */
+export async function hideRequest(formData: FormData) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const request_id = String(formData.get("request_id") ?? "");
+  const tab = String(formData.get("tab") ?? "inbox") === "sent" ? "sent" : "inbox";
+  if (!UUID.test(request_id)) return;
+
+  const { error } = await supabase
+    .from("request_hidden")
+    .upsert({ request_id, profile_id: profile.id }, { onConflict: "request_id,profile_id", ignoreDuplicates: true });
+
+  revalidatePath("/requests", "layout");
+  redirect(`/requests?tab=${tab}&${error ? `error=${encodeURIComponent(error.message)}` : "deleted=1"}`);
+}
+
+/** Deletes one reply for the current user only. */
+export async function hideRequestMessage(formData: FormData) {
+  const profile = await requireProfile();
+  const supabase = await createClient();
+
+  const message_id = String(formData.get("message_id") ?? "");
+  const request_id = String(formData.get("request_id") ?? "");
+  const tab = String(formData.get("tab") ?? "inbox") === "sent" ? "sent" : "inbox";
+  if (!UUID.test(message_id) || !UUID.test(request_id)) return;
+
+  const { error } = await supabase
+    .from("request_message_hidden")
+    .upsert({ message_id, profile_id: profile.id }, { onConflict: "message_id,profile_id", ignoreDuplicates: true });
+
+  revalidatePath("/requests", "layout");
+  redirect(`/requests?tab=${tab}&open=${request_id}${error ? `&error=${encodeURIComponent(error.message)}` : ""}#r-${request_id}`);
+}

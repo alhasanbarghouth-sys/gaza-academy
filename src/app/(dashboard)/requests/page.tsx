@@ -9,11 +9,12 @@ import {
   isManagementRole,
 } from "@/lib/rbac";
 import RequestActions from "./_components/RequestActions";
-import { addRequestMessage } from "./actions";
+import ConfirmDelete from "./_components/ConfirmDelete";
+import { addRequestMessage, hideRequest, hideRequestMessage } from "./actions";
 import type { OrgRequest, UserRole } from "@/types/database";
 
 type Person = { full_name: string; role: UserRole } | null;
-type Message = { id: string; body: string; created_at: string; author: Person };
+type Message = { id: string; body: string; created_at: string; author: Person; request_message_hidden?: unknown[] };
 type Row = OrgRequest & {
   requester: Person;
   recipient: Person;
@@ -48,7 +49,7 @@ const who = (p: Person) => (p ? `${p.full_name} (${ROLE_LABELS_AR[p.role]})` : "
 export default async function RequestsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; status?: string; open?: string; created?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; status?: string; open?: string; created?: string; deleted?: string; error?: string }>;
 }) {
   const sp = await searchParams;
   const tab: "inbox" | "sent" = sp.tab === "sent" ? "sent" : "inbox";
@@ -58,23 +59,34 @@ export default async function RequestsPage({
 
   const PEOPLE =
     "*, requester:profiles!requests_requester_id_fkey(full_name, role), recipient:profiles!requests_recipient_id_fkey(full_name, role), responder:profiles!requests_responded_by_fkey(full_name, role)";
-  const build = (select: string) => {
-    let q = supabase.from("requests").select(select).order("updated_at", { ascending: false }).limit(200);
+  // What the user deleted is hidden from them only (request_hidden holds just their own rows).
+  const build = (select: string, hiding = true) => {
+    let q = supabase
+      .from("requests")
+      .select(hiding ? `${select}, request_hidden(profile_id)` : select)
+      .order("updated_at", { ascending: false })
+      .limit(200);
+    if (hiding) q = q.is("request_hidden", null);
     q = tab === "sent" ? q.eq("requester_id", profile.id) : q.neq("requester_id", profile.id);
     return status ? q.eq("status", status) : q;
   };
-  let res = await build(`${PEOPLE}, request_messages(id, body, created_at, author:profiles(full_name, role))`);
-  // Until 0010 is run there is no reply table; still show the requests.
-  if (res.error) res = await build(PEOPLE);
+  let res = await build(
+    `${PEOPLE}, request_messages(id, body, created_at, author:profiles!request_messages_author_id_fkey(full_name, role), request_message_hidden(profile_id))`
+  );
+  // Until 0011 (deletion) or 0010 (replies) is run, still show the requests.
+  if (res.error) res = await build(`${PEOPLE}, request_messages(id, body, created_at, author:profiles!request_messages_author_id_fkey(full_name, role))`, false);
+  if (res.error) res = await build(PEOPLE, false);
   const rows = (res.data ?? []) as unknown as Row[];
 
-  const [{ count: inboxPending }, { count: sentOpen }] = await Promise.all([
-    supabase.from("requests").select("id", { count: "exact", head: true }).neq("requester_id", profile.id).eq("status", "pending"),
-    supabase
-      .from("requests")
-      .select("id", { count: "exact", head: true })
-      .eq("requester_id", profile.id)
-      .in("status", ["pending", "in_review"]),
+  const countOf = async (hiding: boolean, filter: (q: any) => any): Promise<number | null> => {
+    let q = supabase.from("requests").select(hiding ? "id, request_hidden(profile_id)" : "id", { count: "exact", head: true });
+    if (hiding) q = q.is("request_hidden", null);
+    const { count, error } = await filter(q);
+    return error && hiding ? countOf(false, filter) : count;
+  };
+  const [inboxPending, sentOpen] = await Promise.all([
+    countOf(true, (q) => q.neq("requester_id", profile.id).eq("status", "pending")),
+    countOf(true, (q) => q.eq("requester_id", profile.id).in("status", ["pending", "in_review"])),
   ]);
 
   const canRespond = tab === "inbox";
@@ -97,6 +109,11 @@ export default async function RequestsPage({
       {sp.created && (
         <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
           أُرسل طلبك، وتجده في «المرسَل» مع حالته.
+        </div>
+      )}
+      {sp.deleted && (
+        <div className="rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700">
+          حُذفت المراسلة من عندك فقط، وتبقى لدى الطرف الآخر.
         </div>
       )}
       {sp.error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{sp.error}</div>}
@@ -154,7 +171,7 @@ export default async function RequestsPage({
             <span>الحالة</span>
           </div>
           {rows.map((r) => {
-            const messages = (r.request_messages ?? []).sort((a, b) => a.created_at.localeCompare(b.created_at));
+            const messages = (r.request_messages ?? []).filter((m) => !m.request_message_hidden?.length).sort((a, b) => a.created_at.localeCompare(b.created_at));
             const target = r.recipient ? who(r.recipient) : ROLE_LABELS_AR[r.recipient_role as UserRole] ?? "—";
             return (
               <details key={r.id} id={`r-${r.id}`} open={sp.open === r.id} className="group border-b border-black/5 last:border-0">
@@ -201,7 +218,17 @@ export default async function RequestsPage({
                     <ul className="space-y-2">
                       {messages.map((m) => (
                         <li key={m.id} className="rounded-xl bg-white p-3 text-sm ring-1 ring-black/5">
-                          <p className="mb-1 text-[11px] text-gray-500">{who(m.author)} · {stamp(m.created_at)}</p>
+                          <div className="mb-1 flex items-center justify-between gap-2">
+                            <p className="text-[11px] text-gray-500">{who(m.author)} · {stamp(m.created_at)}</p>
+                            <ConfirmDelete
+                              action={hideRequestMessage}
+                              fields={{ message_id: m.id, request_id: r.id, tab }}
+                              label="حذف"
+                              title="حذف هذه الرسالة؟"
+                              message="ستُحذف الرسالة من عندك فقط، وتبقى ظاهرة لدى الطرف الآخر. هل أنت متأكد؟"
+                              compact
+                            />
+                          </div>
                           <p className="whitespace-pre-wrap text-gray-800">{m.body}</p>
                         </li>
                       ))}
@@ -216,6 +243,16 @@ export default async function RequestsPage({
                   </form>
 
                   {canRespond && <RequestActions id={r.id} />}
+
+                  <div className="flex justify-end border-t border-black/5 pt-3">
+                    <ConfirmDelete
+                      action={hideRequest}
+                      fields={{ request_id: r.id, tab }}
+                      label="حذف المراسلة كاملة"
+                      title="حذف المراسلة كاملة؟"
+                      message="سيُحذف هذا الطلب وكل ردوده من عندك فقط، ويبقى ظاهراً لدى الطرف الآخر. وإذا وصلك رد جديد عليه يعود للظهور. هل أنت متأكد؟"
+                    />
+                  </div>
                 </div>
               </details>
             );
