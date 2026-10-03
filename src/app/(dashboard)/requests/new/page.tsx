@@ -2,6 +2,7 @@ import { createRequest } from "../actions";
 import { REQUEST_PRIORITY_LABELS_AR, REQUEST_TYPE_LABELS_AR, ROLE_LABELS_AR } from "@/lib/rbac";
 import type { UserRole } from "@/types/database";
 import SubmitButton from "@/components/SubmitButton";
+import AttachmentPicker from "@/components/AttachmentPicker";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -98,6 +99,11 @@ export default async function NewRequestPage({
         <div>
           <label className="label" htmlFor="message">تفاصيل الطلب</label>
           <textarea id="message" name="message" required rows={5} className="input" placeholder="اشرح طلبك بالتفصيل..." />
+        </div>
+
+        <div>
+          <p className="label">مرفقات (اختياري)</p>
+          <AttachmentPicker source="request" name="attachments" />
         </div>
 
         <SubmitButton pendingLabel="جارٍ الإرسال...">إرسال الطلب</SubmitButton>

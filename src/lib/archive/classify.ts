@@ -54,7 +54,7 @@ const strip = (xml: string) =>
     .trim();
 
 /** Turns the file into something Gemini can read: the file itself (PDF, image) or its text (Office, text). */
-async function fileParts(buf: Buffer, name: string, mime: string): Promise<{ parts: object[]; readContent: boolean }> {
+export async function fileParts(buf: Buffer, name: string, mime: string): Promise<{ parts: object[]; readContent: boolean }> {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   const nameOnly = { parts: [], readContent: false };
 

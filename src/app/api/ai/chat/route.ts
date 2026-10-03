@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { ApiError, GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
 import { gatherAiContext } from "@/lib/ai/context";
+import { downloadAttachment, validateAttachments, type Attachment } from "@/lib/attachments";
+import { fileParts } from "@/lib/archive/classify";
+
+export const maxDuration = 60;
+// Files read by the assistant in one question (Gemini inline limit is ~20 MB).
+const MAX_INLINE_TOTAL = 18 * 1024 * 1024;
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 
@@ -21,7 +27,8 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const message = String(body.message ?? "").trim();
+  const attachments = await validateAttachments(body.attachments, user.id);
+  const message = String(body.message ?? "").trim() || (attachments.length ? "اقرأ الملفات المرفقة ولخّص أهم ما فيها." : "");
   let conversationId = body.conversationId as string | undefined;
 
   if (!message) {
@@ -48,22 +55,53 @@ export async function POST(req: Request) {
     conversationId = conv.id;
   }
 
-  await supabase.from("ai_messages").insert({
-    conversation_id: conversationId,
-    role: "user",
-    content: message,
-  });
-
-  const { data: history } = await supabase
+  const userRow: Record<string, unknown> = { conversation_id: conversationId, role: "user", content: message };
+  let { data: saved, error: saveError } = await supabase
     .from("ai_messages")
-    .select("role, content")
+    .insert(attachments.length ? { ...userRow, attachments } : userRow)
+    .select("id")
+    .single();
+  // Until 0014 is run there is no attachments column; still answer.
+  if (saveError && attachments.length) ({ data: saved } = await supabase.from("ai_messages").insert(userRow).select("id").single());
+  await supabase.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+
+  // The latest 30 messages, oldest first.
+  type Turn = { role: string; content: string; attachments?: Attachment[] };
+  let recent: Turn[] | null;
+  let historyError: unknown;
+  ({ data: recent, error: historyError } = await supabase
+    .from("ai_messages")
+    .select("role, content, attachments")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(30);
+    .order("created_at", { ascending: false })
+    .limit(30));
+  if (historyError) {
+    ({ data: recent } = await supabase
+      .from("ai_messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
+      .limit(30));
+  }
+  const history = (recent ?? []).reverse();
+
+  // The files attached to this question are read in full; earlier ones are named only.
+  const fileInput: object[] = [];
+  let inlineBytes = 0;
+  for (const a of attachments) {
+    const buf = await downloadAttachment(a.path);
+    if (!buf) continue;
+    const { parts, readContent } = buf.length + inlineBytes <= MAX_INLINE_TOTAL ? await fileParts(buf, a.name, a.type) : { parts: [], readContent: false };
+    if (readContent) inlineBytes += buf.length;
+    fileInput.push({ text: `الملف المرفق «${a.name}»${readContent ? ":" : " (لم يُقرأ محتواه: نوعه أو حجمه لا يسمح)."}` }, ...parts);
+  }
 
   const context = await gatherAiContext(profile);
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+    ...(process.env.GEMINI_BASE_URL ? { httpOptions: { baseUrl: process.env.GEMINI_BASE_URL } } : {}),
+  });
 
   const systemPrompt = `أنت المساعد الذكي لنظام إدارة جمعية بسمة للثقافة والفنون. تتحدث العربية بشكل أساسي وبأسلوب واضح ومباشر.
 أنت مساعد ذكاء اصطناعي عام (LLM) — يمكنك الإجابة عن أي سؤال يطرحه المستخدم، وليس فقط الأسئلة المتعلقة بالنظام.
@@ -76,10 +114,16 @@ export async function POST(req: Request) {
 ${JSON.stringify(context, null, 2)}`;
 
   // Gemini calls the assistant role "model".
-  const contents = (history?.length ? history : [{ role: "user", content: message }]).map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }],
-  }));
+  const turns = history.length ? history : [{ role: "user", content: message, attachments }];
+  const contents = turns.map((m, i) => {
+    const names = (m.attachments ?? []).map((a) => a.name);
+    const text = names.length ? `${m.content}\n[مرفقات: ${names.join("، ")}]` : m.content;
+    const isCurrent = i === turns.length - 1 && m.role === "user";
+    return {
+      role: m.role === "assistant" ? "model" : "user",
+      parts: isCurrent && fileInput.length ? [...fileInput, { text }] : [{ text }],
+    };
+  });
 
   try {
     const response = await ai.models.generateContent({
@@ -96,7 +140,7 @@ ${JSON.stringify(context, null, 2)}`;
       content: answer,
     });
 
-    return NextResponse.json({ conversationId, answer });
+    return NextResponse.json({ conversationId, answer, messageId: saved?.id ?? null, attachments });
   } catch (err) {
     console.error("AI chat error", err);
     if (err instanceof ApiError) {

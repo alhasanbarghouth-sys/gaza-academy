@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireProfile } from "@/lib/auth";
 import { safeStorageKey } from "@/lib/storage";
+import { registerUpload } from "@/lib/attachments";
 import { GRANT_PRESETS, MAX_ARCHIVE_FILE_BYTES, sanitizeSearch } from "@/lib/archive/constants";
 import type { ArchiveEntity, EntityType } from "@/types/database";
 
@@ -347,23 +348,12 @@ export async function queueBulkUpload(input: {
   name: string;
   type: string;
   size: number;
-}): Promise<Result<{ id: string }>> {
+}): Promise<Result<{ id?: string; duplicate?: string }>> {
   const profile = await requireProfile();
-  if (!input.path.startsWith(`${profile.id}/`)) return { error: "مسار الملف غير صالح" };
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("archive_intake_queue")
-    .insert({
-      created_by: profile.id,
-      storage_path: input.path,
-      file_name: input.name.slice(0, 250),
-      mime_type: input.type || null,
-      file_size: Math.max(0, Math.floor(input.size)),
-    })
-    .select("id")
-    .single();
-  if (error || !data) return { error: error?.message ?? "تعذّر تسجيل الملف في قائمة المراجعة" };
-  return { id: data.id };
+  const res = await registerUpload(profile.id, input, "bulk");
+  if ("error" in res) return res;
+  if (res.action === "duplicate") return { duplicate: res.note };
+  return { id: res.queue_id };
 }
 
 export async function fileQueuedDocument(

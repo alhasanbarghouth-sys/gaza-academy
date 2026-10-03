@@ -10,16 +10,20 @@ import {
 } from "@/lib/rbac";
 import RequestActions from "./_components/RequestActions";
 import ConfirmDelete from "./_components/ConfirmDelete";
+import AttachmentPicker from "@/components/AttachmentPicker";
+import AttachmentList from "@/components/AttachmentList";
+import type { Attachment } from "@/lib/attachments";
 import { addRequestMessage, hideRequest, hideRequestMessage } from "./actions";
 import type { OrgRequest, UserRole } from "@/types/database";
 
 type Person = { full_name: string; role: UserRole } | null;
-type Message = { id: string; body: string; created_at: string; author: Person; request_message_hidden?: unknown[] };
+type Message = { id: string; body: string; created_at: string; author: Person; request_message_hidden?: unknown[]; attachments?: Attachment[] };
 type Row = OrgRequest & {
   requester: Person;
   recipient: Person;
   responder: Person;
   request_messages?: Message[];
+  attachments?: Attachment[];
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -71,8 +75,13 @@ export default async function RequestsPage({
     return status ? q.eq("status", status) : q;
   };
   let res = await build(
-    `${PEOPLE}, request_messages(id, body, created_at, author:profiles!request_messages_author_id_fkey(full_name, role), request_message_hidden(profile_id))`
+    `${PEOPLE}, request_messages(id, body, created_at, attachments, author:profiles!request_messages_author_id_fkey(full_name, role), request_message_hidden(profile_id))`
   );
+  // Before 0014 (attachments) is run.
+  if (res.error)
+    res = await build(
+      `${PEOPLE}, request_messages(id, body, created_at, author:profiles!request_messages_author_id_fkey(full_name, role), request_message_hidden(profile_id))`
+    );
   // Until 0011 (deletion) or 0010 (replies) is run, still show the requests.
   if (res.error) res = await build(`${PEOPLE}, request_messages(id, body, created_at, author:profiles!request_messages_author_id_fkey(full_name, role))`, false);
   if (res.error) res = await build(PEOPLE, false);
@@ -206,7 +215,10 @@ export default async function RequestsPage({
                     )}
                   </dl>
 
-                  <p className="whitespace-pre-wrap rounded-xl bg-white p-3 text-sm text-gray-800 ring-1 ring-black/5">{r.message}</p>
+                  <div className="rounded-xl bg-white p-3 text-sm text-gray-800 ring-1 ring-black/5">
+                    <p className="whitespace-pre-wrap">{r.message}</p>
+                    <AttachmentList items={r.attachments} src="request" id={r.id} />
+                  </div>
 
                   {r.response_note && (
                     <p className="rounded-xl bg-white p-3 text-sm text-gray-700 ring-1 ring-black/5">
@@ -230,16 +242,20 @@ export default async function RequestsPage({
                             />
                           </div>
                           <p className="whitespace-pre-wrap text-gray-800">{m.body}</p>
+                          <AttachmentList items={m.attachments} src="reply" id={m.id} />
                         </li>
                       ))}
                     </ul>
                   )}
 
-                  <form action={addRequestMessage} className="flex flex-col gap-2 sm:flex-row">
+                  <form action={addRequestMessage} className="space-y-2">
                     <input type="hidden" name="request_id" value={r.id} />
                     <input type="hidden" name="tab" value={tab} />
-                    <textarea name="body" rows={2} required placeholder="اكتب رداً أو استفساراً…" className="input text-sm" />
-                    <button className="btn-secondary shrink-0 sm:self-end">إرسال الرد</button>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <textarea name="body" rows={2} placeholder="اكتب رداً أو استفساراً…" className="input text-sm" />
+                      <button className="btn-secondary shrink-0 sm:self-end">إرسال الرد</button>
+                    </div>
+                    <AttachmentPicker source="request" name="attachments" />
                   </form>
 
                   {canRespond && <RequestActions id={r.id} />}

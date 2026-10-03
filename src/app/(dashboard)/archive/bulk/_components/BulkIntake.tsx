@@ -56,7 +56,7 @@ type Item = {
   id?: string;
   file_name: string;
   file_size: number;
-  status: "uploading" | "uploaded" | "analyzing" | "ready" | "error" | "saving" | "filed";
+  status: "uploading" | "uploaded" | "analyzing" | "ready" | "error" | "saving" | "filed" | "duplicate";
   error?: string | null;
   suggestion?: Suggestion | null;
   tokens?: number | null;
@@ -202,6 +202,7 @@ export default function BulkIntake({
         if ("error" in up) return patch(key, { status: "error", error: up.error });
         const q = await queueBulkUpload({ path: up.path, name: file.name, type: file.type, size: file.size });
         if ("error" in q && q.error) return patch(key, { status: "error", error: q.error });
+        if ((q as { duplicate?: string }).duplicate) return patch(key, { status: "duplicate", error: (q as { duplicate: string }).duplicate });
         const id = (q as { id: string }).id;
         patch(key, { id, status: "uploaded" });
         if (aiEnabled) analyze(key, id);
@@ -477,6 +478,8 @@ function ItemCard({
       <Badge icon={<Loader2 className="h-3.5 w-3.5 animate-spin" />} text="جارٍ الحفظ" cls="bg-gray-100 text-gray-600" />
     ) : item.status === "filed" ? (
       <Badge icon={<CheckCircle2 className="h-3.5 w-3.5" />} text="حُفظ" cls="bg-emerald-50 text-emerald-700" />
+    ) : item.status === "duplicate" ? (
+      <Badge icon={<CheckCircle2 className="h-3.5 w-3.5" />} text="موجود مسبقاً — لم يُحفظ" cls="bg-gray-100 text-gray-700" />
     ) : item.status === "error" ? (
       <Badge icon={<TriangleAlert className="h-3.5 w-3.5" />} text="تعذّر" cls="bg-red-50 text-red-700" />
     ) : problem ? (
@@ -490,7 +493,7 @@ function ItemCard({
       <button
         type="button"
         onClick={onToggle}
-        disabled={!d || item.status === "filed"}
+        disabled={!d || item.status === "filed" || item.status === "duplicate"}
         className="grid w-full grid-cols-1 gap-1 px-4 py-3 text-right hover:bg-gray-50 disabled:cursor-default disabled:hover:bg-white md:grid-cols-[1fr_auto] md:items-center md:gap-3"
       >
         <span className="min-w-0">
@@ -515,13 +518,13 @@ function ItemCard({
 
       {(item.error || (item.status === "error" && item.id) || item.status === "filed") && (
         <div className="flex flex-wrap items-center gap-3 border-t border-black/5 px-4 py-2 text-xs">
-          {item.error && <span className="text-red-700">{item.error}</span>}
+          {item.error && <span className={item.status === "duplicate" ? "text-gray-600" : "text-red-700"}>{item.error}</span>}
           {item.status === "error" && item.id && (
             <button type="button" onClick={onRetry} className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline">
               <RotateCcw className="h-3.5 w-3.5" /> إعادة التحليل
             </button>
           )}
-          {item.status === "error" && (
+          {(item.status === "error" || item.status === "duplicate") && (
             <button type="button" onClick={onDiscard} className="inline-flex items-center gap-1 text-gray-500 hover:text-red-600">
               <Trash2 className="h-3.5 w-3.5" /> حذف
             </button>
