@@ -17,7 +17,7 @@ export type Attachment = {
   note: string;
 };
 
-export type QueueSource = "bulk" | "ai_chat" | "request";
+export type QueueSource = "bulk" | "ai_chat" | "request" | "announcement";
 
 type Registered = Attachment & { queue_id?: string };
 

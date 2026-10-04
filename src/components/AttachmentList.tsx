@@ -2,7 +2,7 @@ import { FileText } from "lucide-react";
 import type { Attachment } from "@/lib/attachments";
 
 /** Files attached to a message or request; each opens through the permission-checked attachments route. */
-export default function AttachmentList({ items, src, id }: { items?: Attachment[] | null; src: "ai" | "request" | "reply"; id: string }) {
+export default function AttachmentList({ items, src, id }: { items?: Attachment[] | null; src: "ai" | "request" | "reply" | "announcement"; id: string }) {
   if (!items?.length) return null;
   return (
     <ul className="mt-2 flex flex-wrap gap-1.5">

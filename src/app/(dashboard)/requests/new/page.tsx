@@ -1,5 +1,5 @@
 import { createRequest } from "../actions";
-import { REQUEST_PRIORITY_LABELS_AR, REQUEST_TYPE_LABELS_AR, ROLE_LABELS_AR } from "@/lib/rbac";
+import { REQUEST_PRIORITY_LABELS_AR, REQUEST_TYPE_LABELS_AR, ROLE_LABELS_AR, isManagementRole } from "@/lib/rbac";
 import type { UserRole } from "@/types/database";
 import SubmitButton from "@/components/SubmitButton";
 import AttachmentPicker from "@/components/AttachmentPicker";
@@ -21,13 +21,18 @@ export default async function NewRequestPage({
 }) {
   const { error } = await searchParams;
   const profile = await requireProfile();
+  const manager = isManagementRole(profile.role);
+  // Management can also write to any role, or to everyone at once.
+  const roles: UserRole[] = manager
+    ? (Object.keys(ROLE_LABELS_AR) as UserRole[]).filter((r) => r !== "donor" && r !== "auditor")
+    : RECIPIENT_ROLES;
   const supabase = await createClient();
   const { data: people } = await supabase
     .from("profiles")
     .select("id, full_name, role")
     .eq("is_active", true)
     .neq("id", profile.id)
-    .in("role", RECIPIENT_ROLES)
+    .in("role", roles)
     .order("full_name");
 
   return (
@@ -46,7 +51,8 @@ export default async function NewRequestPage({
           <div>
             <label className="label" htmlFor="recipient_role">الطلب موجّه إلى</label>
             <select id="recipient_role" name="recipient_role" required className="input">
-              {RECIPIENT_ROLES.map((r) => (
+              {manager && <option value="__all__">الجميع — كل مستخدمي النظام</option>}
+              {roles.map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABELS_AR[r]}
                 </option>

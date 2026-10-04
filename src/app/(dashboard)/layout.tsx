@@ -5,6 +5,9 @@ import { navForRole, ROLE_LABELS_AR } from "@/lib/rbac";
 import SidebarBody from "./_components/SidebarBody";
 import MobileNav from "./_components/MobileNav";
 import { Search } from "lucide-react";
+import { unreadAnnouncements } from "@/lib/announcements";
+import AnnouncementGate from "./announcements/_components/AnnouncementGate";
+import AnnouncementMemo from "./announcements/_components/AnnouncementMemo";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
@@ -15,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // management for appeals, only system_admin/executive_director for
   // misconduct reports) — a role without access just gets 0 back, not an error.
   const supabase = await createClient();
-  const [pendingAppeals, pendingMisconduct, pendingRequests] = await Promise.all([
+  const [pendingAppeals, pendingMisconduct, pendingRequests, unread] = await Promise.all([
     supabase.from("public_appeals").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("misconduct_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     // Requests waiting for this user's answer (RLS limits it to what they receive).
@@ -31,9 +34,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
           ? supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pending").neq("requester_id", profile.id)
           : res
       ),
+    unreadAnnouncements(profile),
   ]);
   const badges: Record<string, number> = {
     "/requests": pendingRequests.count ?? 0,
+    "/announcements": unread.length,
     "/admin/appeals": pendingAppeals.count ?? 0,
     "/admin/misconduct": pendingMisconduct.count ?? 0,
   };
@@ -61,6 +66,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        {unread.length > 0 && (
+          <AnnouncementGate
+            items={unread.map((a) => ({ id: a.id, priority: a.priority }))}
+            memos={unread.map((a) => <AnnouncementMemo key={a.id} a={a} />)}
+          />
+        )}
       </div>
     </div>
   );

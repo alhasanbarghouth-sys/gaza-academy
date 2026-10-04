@@ -40,6 +40,7 @@ export function isManagementRole(role: UserRole) {
 
 export type NavIcon =
   | "dashboard"
+  | "announcements"
   | "daily-log"
   | "requests"
   | "reports"
@@ -73,6 +74,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "لوحة التحكم", icon: "dashboard", section: "main", roles: "all" },
+  { href: "/announcements", label: "التعميمات", icon: "announcements", section: "main", roles: "all" },
   { href: "/requests", label: "الطلبات والمراسلات", icon: "requests", section: "main", roles: "all" },
   { href: "/search", label: "بحث شامل", icon: "search", section: "main", roles: "all" },
   { href: "/ai", label: "المساعد الذكي", icon: "assistant", section: "main", roles: "all" },

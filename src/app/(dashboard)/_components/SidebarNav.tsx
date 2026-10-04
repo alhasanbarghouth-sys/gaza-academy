@@ -19,11 +19,13 @@ import {
   Sparkles,
   Users,
   type LucideIcon,
+  ScrollText,
 } from "lucide-react";
 import { NAV_SECTION_LABELS, type NavIcon, type NavItem, type NavSection } from "@/lib/rbac";
 
 const ICONS: Record<NavIcon, LucideIcon> = {
   dashboard: LayoutDashboard,
+  announcements: ScrollText,
   "daily-log": ClipboardList,
   requests: Inbox,
   reports: BarChart3,

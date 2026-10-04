@@ -37,6 +37,7 @@
 4ل. ثم [`0012_activity_attachments.sql`](./supabase/migrations/0012_activity_attachments.sql) — صور وملفات تقارير النشاط اليومي: مجلد لكل نشاط (يوم + مشروع) في قاعدة البيانات المؤسسية. يتطلب 0007 و0008.
 4م. ثم [`0013_archive_bulk_intake.sql`](./supabase/migrations/0013_archive_bulk_intake.sql) — الإدراج الذكي: رفع ملفات بالجملة، يقترح Gemini تصنيف كل ملف، ولا يُحفظ شيء قبل المراجعة والاعتماد.
 4ن. ثم [`0014_chat_attachments.sql`](./supabase/migrations/0014_chat_attachments.sql) — المرفقات في المساعد الذكي والمراسلات، مع فحص التكرار مقابل قاعدة البيانات المؤسسية، وحفظ تاريخ المحادثات.
+4س. ثم [`0015_announcements.sql`](./supabase/migrations/0015_announcements.sql) — التعميمات الإدارية (تظهر لكل موظف عند فتحه النظام حتى يؤكد اطّلاعه) والطلبات الموجّهة للجميع.
 5. اذهب إلى **Authentication → Providers** وتأكد أن **Email** مفعّل. (لا داعي لتفعيل تسجيل ذاتي — الحسابات تُنشأ فقط من داخل النظام بواسطة المسؤول، وتسجيل الدخول في هذا النظام برقم الجوال لا بالبريد — انظر القسم أدناه).
 6. اذهب إلى **Authentication → URL Configuration** وأضف رابط موقعك (بعد نشره على Vercel في الخطوة 3) في **Site URL** و **Redirect URLs**.
 7. اذهب إلى **Project Settings → API** وانسخ ثلاث قيم ستحتاجها لاحقًا:

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { isManagementRole } from "@/lib/rbac";
 import { validateAttachments } from "@/lib/attachments";
 import type { RequestPriority, RequestStatus, RequestType, UserRole } from "@/types/database";
 
@@ -23,7 +24,11 @@ export async function createRequest(formData: FormData) {
   const profile = await requireProfile();
   const supabase = await createClient();
 
-  const recipient_role = String(formData.get("recipient_role") ?? "") as UserRole;
+  const toAll = formData.get("recipient_role") === "__all__";
+  if (toAll && !isManagementRole(profile.role)) {
+    redirect(`/requests/new?error=${encodeURIComponent("الإرسال للجميع متاح للإدارة فقط")}`);
+  }
+  const recipient_role = (toAll ? "" : String(formData.get("recipient_role") ?? "")) as UserRole;
   const recipientIdRaw = String(formData.get("recipient_id") ?? "");
   const recipient_id = UUID.test(recipientIdRaw) ? recipientIdRaw : null;
   const request_type = String(formData.get("request_type") ?? "other") as RequestType;
@@ -31,18 +36,21 @@ export async function createRequest(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const message = String(formData.get("message") ?? "").trim();
 
-  if (!recipient_role || !title || !message) {
+  if ((!recipient_role && !toAll) || !title || !message) {
     redirect(`/requests/new?error=${encodeURIComponent("الرجاء تعبئة كل الحقول المطلوبة")}`);
   }
 
   const attachments = await validateAttachments(attachmentsFrom(formData), profile.id);
-  const row: Record<string, unknown> = { requester_id: profile.id, recipient_role, recipient_id, request_type, priority, title, message };
+  const row: Record<string, unknown> = toAll
+    ? { requester_id: profile.id, recipient_role: null, recipient_id: null, to_all: true, request_type, priority, title, message }
+    : { requester_id: profile.id, recipient_role, recipient_id, request_type, priority, title, message };
   let { error } = await supabase.from("requests").insert(attachments.length ? { ...row, attachments } : row);
   // Until 0014 is run there is no attachments column; still send the request.
   if (error && attachments.length && /attachments/.test(error.message)) ({ error } = await supabase.from("requests").insert(row));
 
   if (error) {
-    redirect(`/requests/new?error=${encodeURIComponent(error.message)}`);
+    const msg = toAll && /to_all/.test(error.message) ? "الإرسال للجميع يحتاج تشغيل الملف 0015 في Supabase" : error.message;
+    redirect(`/requests/new?error=${encodeURIComponent(msg)}`);
   }
 
   revalidatePath("/requests", "layout");

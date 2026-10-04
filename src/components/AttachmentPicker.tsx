@@ -24,7 +24,7 @@ export default function AttachmentPicker({
   dropTarget,
   resetKey,
 }: {
-  source: "ai_chat" | "request";
+  source: "ai_chat" | "request" | "announcement";
   name?: string;
   onChange?: (atts: Attachment[]) => void;
   onBusy?: (busy: boolean) => void;

@@ -181,7 +181,8 @@ export default async function RequestsPage({
           </div>
           {rows.map((r) => {
             const messages = (r.request_messages ?? []).filter((m) => !m.request_message_hidden?.length).sort((a, b) => a.created_at.localeCompare(b.created_at));
-            const target = r.recipient ? who(r.recipient) : ROLE_LABELS_AR[r.recipient_role as UserRole] ?? "—";
+            const toAll = (r as Row & { to_all?: boolean }).to_all;
+            const target = toAll ? "الجميع" : r.recipient ? who(r.recipient) : ROLE_LABELS_AR[r.recipient_role as UserRole] ?? "—";
             return (
               <details key={r.id} id={`r-${r.id}`} open={sp.open === r.id} className="group border-b border-black/5 last:border-0">
                 <summary className="grid cursor-pointer list-none grid-cols-1 gap-1 px-4 py-3 hover:bg-gray-50 md:grid-cols-[7rem_1fr_12rem_9rem_8rem] md:items-center md:gap-3">
@@ -258,7 +259,10 @@ export default async function RequestsPage({
                     <AttachmentPicker source="request" name="attachments" />
                   </form>
 
-                  {canRespond && <RequestActions id={r.id} />}
+                  {canRespond && (!toAll || profile.role === "system_admin" || profile.role === "executive_director") && (
+                    <RequestActions id={r.id} />
+                  )}
+                  {tab === "sent" && toAll && <RequestActions id={r.id} />}
 
                   <div className="flex justify-end border-t border-black/5 pt-3">
                     <ConfirmDelete

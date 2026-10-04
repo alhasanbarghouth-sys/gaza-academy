@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { signedAttachmentUrl, type Attachment } from "@/lib/attachments";
 
-const TABLES = { ai: "ai_messages", request: "requests", reply: "request_messages" } as const;
+const TABLES = { ai: "ai_messages", request: "requests", reply: "request_messages", announcement: "announcements" } as const;
 const UUID = /^[0-9a-f-]{36}$/i;
 
 /**
