@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { matchesArabic } from "@/lib/arabic";
 
 export type Person = { id: string; full_name: string; roleLabel: string; group: string };
 
@@ -31,7 +32,7 @@ export default function PeoplePicker({
 
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  const filtered = people.filter((p) => p.full_name.includes(q.trim()));
+  const filtered = people.filter((p) => matchesArabic(`${p.full_name} ${p.roleLabel}`, q));
   const groups = Array.from(new Set(filtered.map((p) => p.group)));
   const byId = new Map(people.map((p) => [p.id, p]));
 
@@ -65,7 +66,7 @@ export default function PeoplePicker({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="ابحث بالاسم"
+            placeholder="اكتب جزءاً من الاسم للبحث"
             className="input mb-2 py-2"
             autoFocus
           />
